@@ -1,12 +1,12 @@
 {
   "scripts": {
     "start": "node server.js",
-    "check": "node --check src/scripts/app.js && node --check src/scripts/account-utils.js && node --check src/scripts/pdf-parser.js && node --check server.js",
+    "check": "node --check src/scripts/app.js && node --check src/scripts/account-utils.js && node --check src/scripts/date-utils.js && node --check src/scripts/pdf-parser.js && node --check server.js",
     "validate": "npm run check && npm test",
     "test": "node --test test/*.test.js",
     "pages:dev": "wrangler pages dev ."
   },
   "devDependencies": {
-    "wrangler": "^4.110.0"
+    "wrangler": "^4.125.0"
   }
 }

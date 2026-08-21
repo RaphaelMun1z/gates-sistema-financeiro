@@ -23,6 +23,7 @@ Tambem e possivel abrir `index.html` diretamente, mas o servidor local evita pro
 - O botao **Exportar** gera um backup JSON com lancamentos, categorias, contas, orcamentos e metas.
 - O fluxo **Importar > Backup JSON** restaura esses dados em outro navegador, guia anonima ou dominio.
 - PDFs sao processados localmente no navegador; o arquivo nao e enviado para API externa.
+- O servidor local publica somente `index.html`, `assets/` e `src/`; dados privados e metadados do repositorio nao sao servidos.
 
 ## Recursos principais
 
@@ -55,6 +56,7 @@ Nao configure KV, D1, variaveis de autenticacao ou Pages Functions para o fluxo 
 ```bash
 node --check src/scripts/app.js
 node --check src/scripts/account-utils.js
+node --check src/scripts/date-utils.js
 node --check src/scripts/pdf-parser.js
 node --check server.js
 npm test
@@ -67,6 +69,7 @@ npm test
 - `src/scripts/app.js`: estado, renderizacao, formularios, filtros e fluxos de importacao.
 - `src/scripts/pdf-parser.js`: parser puro de extratos e faturas.
 - `src/scripts/account-utils.js`: normalizacao e remocao de contas.
+- `src/scripts/date-utils.js`: validacao e intervalos de datas.
 - `assets/favicon.svg`: icone do app.
 - `server.js`: servidor estatico local.
 - `test/`: testes automatizados com `node:test`.

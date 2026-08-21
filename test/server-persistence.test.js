@@ -37,4 +37,19 @@ test("servidor local entrega o app estático sem API de usuário", async (contex
 
   const dataApi = await fetch(`${baseUrl}/api/data`);
   assert.equal(dataApi.status, 404);
+
+  const publicScript = await fetch(`${baseUrl}/src/scripts/app.js`);
+  assert.equal(publicScript.status, 200);
+
+  for (const privatePath of [
+    "/data/financeiro.json",
+    "/.git/HEAD",
+    "/server.js",
+    "/package.json",
+    "/src/../server.js",
+    "/%2e%2egit/HEAD"
+  ]) {
+    const privateResponse = await fetch(`${baseUrl}${privatePath}`);
+    assert.equal(privateResponse.status, 404, `arquivo privado exposto: ${privatePath}`);
+  }
 });

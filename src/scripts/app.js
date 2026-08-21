@@ -375,7 +375,7 @@ function makeTransaction(type, description, amount, date, category, account, rec
 function normalizeState(raw) {
   const fallback = seedState();
   const categories = normalizeCategories(raw?.categories);
-  const selectedDate = raw?.selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(raw.selectedDate)
+  const selectedDate = window.GatesDateUtils.isValidISODate(raw?.selectedDate)
     ? raw.selectedDate
     : fallback.selectedDate;
 
@@ -442,7 +442,7 @@ function normalizeTransaction(item, groups = app?.state?.categories || DEFAULT_C
     ? rawCategory
     : rawCategory;
   const amount = Number(item?.amount);
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(item?.date || "") ? item.date : toISO(new Date());
+  const date = window.GatesDateUtils.isValidISODate(item?.date) ? item.date : toISO(new Date());
   const description = String(item?.description || "").trim();
   if (!description || !Number.isFinite(amount) || amount <= 0) return null;
 
@@ -471,7 +471,7 @@ function normalizeGoal(item) {
       return {
         id: String(entry.id || uid("contribution")),
         amount,
-        date: /^\d{4}-\d{2}-\d{2}$/.test(entry?.date || "") ? entry.date : "",
+        date: window.GatesDateUtils.isValidISODate(entry?.date) ? entry.date : "",
         label: String(entry?.label || "Aporte").trim() || "Aporte"
       };
     }).filter(Boolean)
@@ -484,7 +484,7 @@ function normalizeGoal(item) {
     target,
     saved: Math.max(0, saved),
     contributions,
-    due: /^\d{4}-\d{2}-\d{2}$/.test(item?.due || "") ? item.due : ""
+    due: window.GatesDateUtils.isValidISODate(item?.due) ? item.due : ""
   };
 }
 
@@ -560,8 +560,7 @@ function periodRange() {
 }
 
 function isInRange(iso, range) {
-  const date = fromISO(iso);
-  return date >= range.start && date <= range.end;
+  return window.GatesDateUtils.isInRange(iso, range);
 }
 
 function allPeriodTransactions() {
@@ -1734,7 +1733,7 @@ function softColor(category) {
   return `${color}16`;
 }
 
-function renderBudgets() {
+function renderBudgetsLegacy() {
   const items = visibleTransactions();
   const spent = expensesByCategory(items);
   els.budgetList.innerHTML = categoriesForType("expense").map((category) => {
@@ -1758,7 +1757,7 @@ function renderBudgets() {
   }).join("");
 }
 
-function renderWeekSummary() {
+function renderWeekSummaryLegacy() {
   const range = periodRange();
   const monthStart = new Date(selectedDate().getFullYear(), selectedDate().getMonth(), 1);
   const weeks = [];
