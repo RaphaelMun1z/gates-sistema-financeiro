@@ -4,6 +4,11 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#f5f5f7" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="manifest" href="manifest.json" />
+        <link rel="apple-touch-icon" href="assets/icon-192.svg" />
         <title>Gates - Finanças</title>
         <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,13 +20,38 @@
         <link rel="stylesheet" href="src/styles/styles.css" />
     </head>
     <body>
+        <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+            <div class="auth-panel">
+                <div class="auth-brand">Gates</div>
+                <h1 id="authTitle">Acesse suas finanças</h1>
+                <p class="auth-subtitle" id="authSubtitle">Entre para continuar.</p>
+                <form id="loginForm" class="auth-form">
+                    <label class="form-group"><span>E-mail</span><input id="loginEmail" type="email" autocomplete="username" required /></label>
+                    <label class="form-group"><span>Senha</span><input id="loginPassword" type="password" autocomplete="current-password" required /></label>
+                    <button class="btn-primary" type="submit">Entrar</button>
+                    <button class="auth-link" id="forgotPasswordButton" type="button">Esqueci minha senha</button>
+                </form>
+                <form id="requestResetForm" class="auth-form hidden">
+                    <label class="form-group"><span>E-mail da conta</span><input id="resetEmail" type="email" autocomplete="email" required /></label>
+                    <button class="btn-primary" type="submit">Solicitar recuperação</button>
+                    <button class="auth-link" id="backToLoginButton" type="button">Voltar para o login</button>
+                </form>
+                <form id="completeResetForm" class="auth-form hidden">
+                    <label class="form-group"><span>Token de recuperação</span><input id="resetToken" type="text" required /></label>
+                    <label class="form-group"><span>Nova senha</span><input id="resetPassword" type="password" minlength="10" autocomplete="new-password" required /></label>
+                    <button class="btn-primary" type="submit">Alterar senha</button>
+                    <button class="auth-link" id="resetLoginButton" type="button">Voltar para o login</button>
+                </form>
+                <p class="auth-error" id="authError" role="alert"></p>
+            </div>
+        </section>
         <div
             class="sidebar-overlay"
             id="sidebarOverlay"
             aria-hidden="true"
         ></div>
 
-        <div class="app-shell">
+        <div class="app-shell app-hidden">
             <aside
                 class="sidebar"
                 id="sidebar"
@@ -81,6 +111,7 @@
                             <span class="brand-name">Gates</span>
                         </span>
                     </a>
+                    <button class="auth-logout" id="logoutButton" type="button">Sair</button>
                     <button
                         class="sidebar-close-btn"
                         id="sidebarCloseBtn"
@@ -238,6 +269,10 @@
                                 </svg>
                             </span>
                             Categorias
+                        </button>
+                        <button class="nav-item" type="button" data-view="banks">
+                            <span class="nav-icon" aria-hidden="true"><i data-lucide="landmark"></i></span>
+                            Bancos
                         </button>
                     </div>
                 </nav>
@@ -556,12 +591,12 @@
                         <select
                             class="filter-select"
                             id="filterAccount"
-                            aria-label="Filtrar por conta"
-                            data-multi-label-singular="conta"
-                            data-multi-label-plural="contas"
+                            aria-label="Filtrar por banco"
+                            data-multi-label-singular="banco"
+                            data-multi-label-plural="bancos"
                             multiple
                         >
-                            <option value="all">Contas</option>
+                            <option value="all">Bancos</option>
                         </select>
                         <button
                             class="filter-clear-btn"
@@ -589,6 +624,41 @@
 
                 <div class="content-area">
                     <section class="finance-workspace">
+                        <section class="view-panel" id="banksView" aria-label="Bancos">
+                            <div class="banks-workspace">
+                                <article class="panel">
+                                    <div class="panel-heading"><div><span class="eyebrow">Instituições</span><h2>Gerenciar bancos</h2></div></div>
+                                    <form class="bank-form" id="bankForm">
+                                        <label class="form-group"><span>Nome do banco</span><input id="bankNameInput" type="text" placeholder="Ex.: Nubank" required /></label>
+                                        <button class="btn-primary" type="submit">Adicionar banco</button>
+                                    </form>
+                                    <div class="bank-list" id="bankList"></div>
+                                </article>
+                            </div>
+                            <div class="cards-workspace">
+                                <article class="panel">
+                                    <div class="panel-heading">
+                                        <div><span class="eyebrow">Meios de pagamento</span><h2>Cadastrar cartão</h2></div>
+                                    </div>
+                                    <form class="card-form" id="cardForm">
+                                        <label class="form-group"><span>Nome do cartão</span><input id="cardNameInput" type="text" placeholder="Ex.: Nubank principal" required></label>
+                                        <label class="form-group"><span>Banco</span><select id="cardBankInput" required></select><input class="hidden" id="customCardBankInput" type="text" placeholder="Nome do novo banco" autocomplete="off" /></label>
+                                        <label class="form-group"><span>Tipo do cartão</span><select id="cardTypeInput"><option value="credit">Crédito</option><option value="debit">Débito</option><option value="credit_debit">Crédito e débito</option><option value="voucher">Voucher</option><option value="prepaid">Pré-pago</option></select></label>
+                                        <div class="form-row" id="cardBillingFields">
+                                            <label class="form-group"><span>Limite</span><input id="cardLimitInput" type="number" min="0" step="0.01" placeholder="0,00" /></label>
+                                            <label class="form-group"><span>Fechamento</span><input id="cardClosingDayInput" type="number" min="1" max="31" value="1" /></label>
+                                            <label class="form-group"><span>Vencimento</span><input id="cardDueDayInput" type="number" min="1" max="31" value="10" /></label>
+                                        </div>
+                                        <button class="btn-primary" type="submit" id="cardSubmitButton">Salvar cartão</button>
+                                    </form>
+                                </article>
+                                <article class="panel">
+                                    <div class="panel-heading"><div><span class="eyebrow">Meios de pagamento</span><h2>Cartões dos bancos</h2></div></div>
+                                    <div class="card-list" id="cardList"></div>
+                                </article>
+                            </div>
+                        </section>
+
                         <section
                             class="metrics-grid"
                             aria-label="Indicadores financeiros"
@@ -748,6 +818,27 @@
                                         Gerar fatura PDF
                                     </button>
                                 </div>
+                                <div class="transaction-toolbar" aria-label="Filtros e ordenação de lançamentos">
+                                    <input id="transactionSearchInput" type="search" placeholder="Buscar nesta lista" aria-label="Buscar lançamentos" />
+                                    <select id="transactionPaymentFilter" aria-label="Filtrar por meio de pagamento">
+                                        <option value="all">Todos os meios</option>
+                                        <option value="pix">Pix</option>
+                                        <option value="credit_card">Cartão de crédito</option>
+                                        <option value="debit_card">Cartão de débito</option>
+                                        <option value="voucher">Voucher</option>
+                                        <option value="cash">Dinheiro</option>
+                                        <option value="transfer">Transferência</option>
+                                        <option value="other">Outro</option>
+                                    </select>
+                                    <select id="transactionSortInput" aria-label="Ordenar lançamentos">
+                                        <option value="date_desc">Mais recentes</option>
+                                        <option value="date_asc">Mais antigos</option>
+                                        <option value="amount_desc">Maior valor</option>
+                                        <option value="amount_asc">Menor valor</option>
+                                        <option value="description">Descrição</option>
+                                    </select>
+                                    <button class="filter-clear-btn" id="transactionFilterClear" type="button">Limpar</button>
+                                </div>
                                 <div class="table-wrap">
                                     <table>
                                         <thead>
@@ -755,7 +846,7 @@
                                                 <th>Data</th>
                                                 <th>Descrição</th>
                                                 <th>Categoria</th>
-                                                <th>Conta</th>
+                                                <th>Banco</th>
                                                 <th>Valor</th>
                                                 <th>Ações</th>
                                             </tr>
@@ -1193,15 +1284,15 @@
                                     <select id="categoryInput"></select>
                                 </label>
                                 <div class="form-group">
-                                    <span id="accountInputLabel">Conta</span>
+                                    <span id="accountInputLabel">Banco</span>
                                     <div class="account-control-row">
                                         <select id="accountInput" aria-labelledby="accountInputLabel"></select>
                                         <button
                                             class="account-delete-button hidden"
                                             id="btnDeleteAccount"
                                             type="button"
-                                            aria-label="Excluir conta selecionada"
-                                            title="Excluir conta selecionada"
+                                            aria-label="Excluir banco selecionado"
+                                            title="Excluir banco selecionado"
                                         >
                                             <i data-lucide="trash-2" aria-hidden="true"></i>
                                         </button>
@@ -1210,11 +1301,35 @@
                                         class="hidden"
                                         id="customAccountInput"
                                         type="text"
-                                        placeholder="Nome da nova conta"
+                                        placeholder="Nome do novo banco"
                                         autocomplete="off"
-                                        aria-label="Nome da nova conta"
+                                        aria-label="Nome do novo banco"
                                     />
                                 </div>
+                                <div class="form-row" id="paymentFields">
+                                    <label class="form-group">
+                                        <span>Meio de pagamento</span>
+                                        <select id="paymentMethodInput">
+                                            <option value="other">Outro</option>
+                                            <option value="pix">Pix</option>
+                                            <option value="credit_card">Cartão de crédito</option>
+                                            <option value="debit_card">Cartão de débito</option>
+                                            <option value="voucher">Voucher</option>
+                                            <option value="cash">Dinheiro</option>
+                                            <option value="transfer">Transferência</option>
+                                        </select>
+                                    </label>
+                                    <label class="form-group hidden" id="cardInputGroup">
+                                        <span>Cartão</span>
+                                        <div class="account-control-row">
+                                            <select id="cardInput"></select>
+                                            <button class="account-delete-button hidden" id="btnDeleteCard" type="button" aria-label="Excluir cartão selecionado" title="Excluir cartão selecionado">
+                                                <i data-lucide="trash-2" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </label>
+                                </div>
+                                <input class="hidden" id="customCardInput" type="text" placeholder="Nome do novo cartão" autocomplete="off" />
                                 <label class="form-group">
                                     <span>Observação</span>
                                     <textarea
@@ -1229,6 +1344,14 @@
                                         type="checkbox"
                                     />
                                     <span>Marcar como recorrente</span>
+                                </label>
+                                <label class="checkbox-row">
+                                    <input id="installmentInput" type="checkbox" />
+                                    <span>Parcelar este lançamento</span>
+                                </label>
+                                <label class="form-group hidden" id="installmentCountGroup">
+                                    <span>Quantidade de parcelas</span>
+                                    <input id="installmentCountInput" type="number" min="2" max="120" value="2" inputmode="numeric" />
                                 </label>
                             </div>
 
@@ -1402,5 +1525,6 @@
             defer
         ></script>
         <script src="src/scripts/app.js" defer></script>
+        <script src="src/scripts/pwa.js" defer></script>
     </body>
 </html>

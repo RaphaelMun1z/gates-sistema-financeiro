@@ -36,7 +36,7 @@ test("servidor local entrega o app estático sem API de usuário", async (contex
   assert.match(await home.text(), /<title>Gates - Finanças<\/title>/u);
 
   const dataApi = await fetch(`${baseUrl}/api/data`);
-  assert.equal(dataApi.status, 404);
+  assert.equal(dataApi.status, 401);
 
   const publicScript = await fetch(`${baseUrl}/src/scripts/app.js`);
   assert.equal(publicScript.status, 200);

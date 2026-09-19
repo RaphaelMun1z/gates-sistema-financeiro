@@ -1,6 +1,5 @@
 "use strict";
 
-const STORAGE_KEY = "gates_financeiro_state_v1";
 const PDFJS_VERSION = "3.11.174";
 const PDF_MAX_FILE_SIZE = 20 * 1024 * 1024;
 const PDF_WORKER_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
@@ -9,6 +8,7 @@ const TESSERACT_URL = `https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VER
 const PDF_OCR_MAX_PAGES = 20;
 const PDF_OCR_RENDER_SCALE = 3;
 const PDF_OCR_MAX_DIMENSION = 4096;
+const LEGACY_STORAGE_KEY = "gates_financeiro_state_v1";
 
 const DEFAULT_CATEGORIES = { income: [], expense: [] };
 
@@ -41,6 +41,17 @@ const LUCIDE_ICON_NAMES = new Set([
 const DEFAULT_CATEGORY_ICON_BY_ID = {};
 
 const els = {
+  authScreen: document.getElementById("authScreen"),
+  loginForm: document.getElementById("loginForm"),
+  loginEmail: document.getElementById("loginEmail"),
+  loginPassword: document.getElementById("loginPassword"),
+  requestResetForm: document.getElementById("requestResetForm"),
+  resetEmail: document.getElementById("resetEmail"),
+  completeResetForm: document.getElementById("completeResetForm"),
+  resetToken: document.getElementById("resetToken"),
+  resetPassword: document.getElementById("resetPassword"),
+  authError: document.getElementById("authError"),
+  logoutButton: document.getElementById("logoutButton"),
   sidebar: document.getElementById("sidebar"),
   sidebarOverlay: document.getElementById("sidebarOverlay"),
   hamburgerBtn: document.getElementById("hamburgerBtn"),
@@ -60,6 +71,10 @@ const els = {
   filterCategory: document.getElementById("filterCategory"),
   filterAccount: document.getElementById("filterAccount"),
   filterClearBtn: document.getElementById("filterClearBtn"),
+  transactionSearchInput: document.getElementById("transactionSearchInput"),
+  transactionPaymentFilter: document.getElementById("transactionPaymentFilter"),
+  transactionSortInput: document.getElementById("transactionSortInput"),
+  transactionFilterClear: document.getElementById("transactionFilterClear"),
   sideBalance: document.getElementById("sideBalance"),
   sideBalanceHint: document.getElementById("sideBalanceHint"),
   miniInsights: document.getElementById("miniInsights"),
@@ -119,6 +134,20 @@ const els = {
   categoryColorButton: document.getElementById("categoryColorButton"),
   categoryColorPreview: document.getElementById("categoryColorPreview"),
   categoryColorPopover: document.getElementById("categoryColorPopover"),
+  cardForm: document.getElementById("cardForm"),
+  cardNameInput: document.getElementById("cardNameInput"),
+  cardBankInput: document.getElementById("cardBankInput"),
+  customCardBankInput: document.getElementById("customCardBankInput"),
+  cardTypeInput: document.getElementById("cardTypeInput"),
+  cardBillingFields: document.getElementById("cardBillingFields"),
+  cardLimitInput: document.getElementById("cardLimitInput"),
+  cardClosingDayInput: document.getElementById("cardClosingDayInput"),
+  cardDueDayInput: document.getElementById("cardDueDayInput"),
+  cardSubmitButton: document.getElementById("cardSubmitButton"),
+  cardList: document.getElementById("cardList"),
+  bankForm: document.getElementById("bankForm"),
+  bankNameInput: document.getElementById("bankNameInput"),
+  bankList: document.getElementById("bankList"),
   categoryColorPalette: document.getElementById("categoryColorPalette"),
   categoryColorHexInput: document.getElementById("categoryColorHexInput"),
   categorySubmitButton: document.getElementById("categorySubmitButton"),
@@ -133,8 +162,17 @@ const els = {
   accountInput: document.getElementById("accountInput"),
   customAccountInput: document.getElementById("customAccountInput"),
   btnDeleteAccount: document.getElementById("btnDeleteAccount"),
+  paymentMethodInput: document.getElementById("paymentMethodInput"),
+  paymentFields: document.getElementById("paymentFields"),
+  cardInput: document.getElementById("cardInput"),
+  cardInputGroup: document.getElementById("cardInputGroup"),
+  btnDeleteCard: document.getElementById("btnDeleteCard"),
+  customCardInput: document.getElementById("customCardInput"),
   notesInput: document.getElementById("notesInput"),
   recurringInput: document.getElementById("recurringInput"),
+  installmentInput: document.getElementById("installmentInput"),
+  installmentCountGroup: document.getElementById("installmentCountGroup"),
+  installmentCountInput: document.getElementById("installmentCountInput"),
   clearFormButton: document.getElementById("clearFormButton"),
   btnDeleteTransaction: document.getElementById("btnDeleteTransaction"),
   submitButton: document.getElementById("submitButton"),
@@ -169,6 +207,7 @@ const app = {
   editingTransactionId: null,
   editingGoalId: null,
   editingCategoryId: null,
+  editingCardId: null,
   pendingImport: null,
   pdfImportInProgress: false,
   importConfirming: false,
@@ -184,7 +223,9 @@ const app = {
     search: "",
     type: "all",
     category: [],
-    account: []
+    account: [],
+    paymentMethod: "all",
+    sort: "date_desc"
   }
 };
 
@@ -352,6 +393,7 @@ function seedState() {
     categoryChartType: "expense",
     categories: cloneCategories(),
     accounts: [],
+    cards: [],
     budgets: {},
     goals: [],
     transactions: []
@@ -382,9 +424,10 @@ function normalizeState(raw) {
   const transactions = Array.isArray(raw?.transactions)
     ? raw.transactions.map((item) => normalizeTransaction(item, categories)).filter(Boolean)
     : fallback.transactions;
-  const accounts = window.GatesAccountUtils
-    ? window.GatesAccountUtils.normalizeAccounts(raw?.accounts, transactions)
-    : [...new Set(transactions.map((item) => item.account).filter(Boolean))];
+  const banks = window.GatesAccountUtils
+    ? window.GatesAccountUtils.normalizeAccounts(raw?.banks || raw?.accounts, transactions)
+    : [...new Set(transactions.map((item) => item.bank || item.account).filter(Boolean))];
+  const cards = Array.isArray(raw?.cards) ? raw.cards.map(normalizeCard).filter(Boolean) : [];
 
   return {
     selectedDate,
@@ -393,7 +436,9 @@ function normalizeState(raw) {
     theme: raw?.theme === "dark" ? "dark" : "light",
     categoryChartType: ["expense", "income", "all"].includes(raw?.categoryChartType) ? raw.categoryChartType : fallback.categoryChartType,
     categories,
-    accounts,
+    accounts: banks,
+    banks,
+    cards,
     budgets: raw?.budgets && typeof raw.budgets === "object" ? raw.budgets : fallback.budgets,
     goals: Array.isArray(raw?.goals) ? raw.goals.map(normalizeGoal).filter(Boolean) : fallback.goals,
     transactions
@@ -453,7 +498,13 @@ function normalizeTransaction(item, groups = app?.state?.categories || DEFAULT_C
     amount,
     date,
     category,
-    account: String(item.account || "").trim(),
+    account: String(item.bank || item.account || "").trim(),
+    bank: String(item.bank || item.account || "").trim(),
+    paymentMethod: ["pix", "credit_card", "debit_card", "voucher", "cash", "transfer", "other"].includes(item?.paymentMethod) ? item.paymentMethod : "other",
+    cardId: String(item.cardId || "").trim(),
+    installmentGroupId: String(item.installmentGroupId || "").trim(),
+    installmentNumber: Math.max(1, Number(item.installmentNumber || 1)),
+    installmentTotal: Math.max(1, Number(item.installmentTotal || 1)),
     recurring: Boolean(item.recurring),
     notes: String(item.notes || "").trim()
   };
@@ -489,18 +540,43 @@ function normalizeGoal(item) {
 }
 
 async function loadData() {
-  const persisted = loadPersistedState();
-  app.state = persisted || seedState();
+  await requireAuthentication();
+  const response = await fetch("/api/data", { credentials: "same-origin" });
+  if (!response.ok) throw new Error("Não foi possível carregar seus dados.");
+  const persisted = await response.json();
+  if (persisted) {
+    app.state = normalizeState(persisted);
+    return;
+  }
+
+  // Migra o estado da versão anterior quando a conta do servidor ainda está vazia.
+  try {
+    const legacyRaw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      app.state = normalizeState(JSON.parse(legacyRaw));
+      await saveState({ strict: true });
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return;
+    }
+  } catch (error) {
+    console.error("Falha ao migrar dados locais", error);
+  }
+  app.state = seedState();
 }
 
-function loadPersistedState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return null;
-  }
+function normalizeCard(item) {
+  const name = String(item?.name || "").trim();
+  if (!name) return null;
+  return {
+    id: String(item.id || uid("card")),
+    name,
+    bank: String(item.bank || "").trim(),
+    bankId: String(item.bankId || "").trim(),
+    type: ["credit", "debit", "credit_debit", "voucher", "prepaid"].includes(item?.type) ? item.type : "credit",
+    creditLimit: Math.max(0, Number(item.creditLimit || 0)),
+    closingDay: Math.min(31, Math.max(1, Number(item.closingDay || 1))),
+    dueDay: Math.min(31, Math.max(1, Number(item.dueDay || 10)))
+  };
 }
 
 function saveState({ strict = false } = {}) {
@@ -510,12 +586,62 @@ function saveState({ strict = false } = {}) {
     ...app.state
   };
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    return Promise.resolve({ local: true });
+    if (window.location.protocol !== "file:") {
+      return fetch("/api/data", { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        .then((response) => { if (!response.ok) throw new Error("Falha ao salvar no servidor."); return { local: false }; })
+        .catch((error) => { if (!strict) showToast("Não foi possível salvar os dados no servidor."); if (strict) throw error; return { local: false }; });
+    }
+    return Promise.reject(new Error("Persistencia local desativada."));
   } catch (error) {
     if (!strict) showToast("Não foi possível salvar os dados neste navegador.");
     return strict ? Promise.reject(error) : Promise.resolve({ local: false });
   }
+}
+
+async function requireAuthentication() {
+  const current = await fetch("/api/auth/me", { credentials: "same-origin" });
+  if (current.ok) { els.authScreen.classList.add("hidden"); document.querySelector(".app-shell").classList.remove("app-hidden"); return; }
+  els.authScreen.classList.remove("hidden");
+  await new Promise((resolve) => { app.authResolve = resolve; });
+}
+
+async function authRequest(url, body) {
+  const response = await fetch(url, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Não foi possível concluir a operação.");
+  return data;
+}
+
+function setAuthMode(mode) {
+  els.loginForm.classList.toggle("hidden", mode !== "login");
+  els.requestResetForm.classList.toggle("hidden", mode !== "request");
+  els.completeResetForm.classList.toggle("hidden", mode !== "complete");
+  els.authError.textContent = "";
+}
+
+function bindAuthEvents() {
+  els.logoutButton.addEventListener("click", async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    window.location.reload();
+  });
+  document.getElementById("forgotPasswordButton").addEventListener("click", () => setAuthMode("request"));
+  document.getElementById("backToLoginButton").addEventListener("click", () => setAuthMode("login"));
+  document.getElementById("resetLoginButton").addEventListener("click", () => setAuthMode("login"));
+  els.loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); els.authError.textContent = "";
+    try { await authRequest("/api/auth/login", { email: els.loginEmail.value, password: els.loginPassword.value }); els.authScreen.classList.add("hidden"); document.querySelector(".app-shell").classList.remove("app-hidden"); app.authResolve?.(); }
+    catch (error) { els.authError.textContent = error.message; }
+  });
+  els.requestResetForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); els.authError.textContent = "";
+    try { await authRequest("/api/auth/request-reset", { email: els.resetEmail.value }); els.authError.textContent = "Confira o log do servidor para obter o token nesta instalação."; setAuthMode("complete"); }
+    catch (error) { els.authError.textContent = error.message; }
+  });
+  els.completeResetForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); els.authError.textContent = "";
+    try { const result = await authRequest("/api/auth/reset", { token: els.resetToken.value, password: els.resetPassword.value }); setAuthMode("login"); els.authError.textContent = result.message; }
+    catch (error) { els.authError.textContent = error.message; }
+  });
 }
 
 function exportPayload() {
@@ -529,6 +655,8 @@ function exportPayload() {
     categoryChartType: app.state.categoryChartType,
     categories: app.state.categories,
     accounts: [...app.state.accounts],
+    banks: [...(app.state.banks || app.state.accounts)],
+    cards: [...(app.state.cards || [])],
     budgets: app.state.budgets,
     goals: [...app.state.goals],
     transactions: [...app.state.transactions].sort(sortTransactions)
@@ -597,6 +725,7 @@ function transactionMatchesActiveFilters(item, search = app.filters.search) {
   if (app.filters.type !== "all" && item.type !== app.filters.type) return false;
   if (!matchesCategoryFilter(item)) return false;
   if (!matchesAccountFilter(item)) return false;
+  if (app.filters.paymentMethod !== "all" && item.paymentMethod !== app.filters.paymentMethod) return false;
   const normalizedSearch = String(search || "").toLowerCase();
   if (!normalizedSearch) return true;
   const haystack = [
@@ -610,7 +739,15 @@ function transactionMatchesActiveFilters(item, search = app.filters.search) {
 }
 
 function visibleTransactions() {
-  return allPeriodTransactions().filter((item) => transactionMatchesActiveFilters(item));
+  const items = allPeriodTransactions().filter((item) => transactionMatchesActiveFilters(item));
+  const sort = app.filters.sort || "date_desc";
+  return items.sort((a, b) => {
+    if (sort === "date_asc") return a.date.localeCompare(b.date) || a.description.localeCompare(b.description, "pt-BR");
+    if (sort === "amount_desc") return Number(b.amount) - Number(a.amount) || sortTransactions(a, b);
+    if (sort === "amount_asc") return Number(a.amount) - Number(b.amount) || sortTransactions(a, b);
+    if (sort === "description") return a.description.localeCompare(b.description, "pt-BR") || sortTransactions(a, b);
+    return sortTransactions(a, b);
+  });
 }
 
 function sortTransactions(a, b) {
@@ -681,9 +818,9 @@ function fillAccountInput(selectedAccount = els.accountInput?.value || "") {
     : accounts;
 
   els.accountInput.innerHTML = [
-    '<option value="">Selecionar conta</option>',
+    '<option value="">Selecionar banco</option>',
     ...optionAccounts.map((account) => `<option value="${escapeHTML(account)}">${escapeHTML(account)}</option>`),
-    `<option value="${ACCOUNT_NEW_VALUE}">+ Nova conta</option>`
+    `<option value="${ACCOUNT_NEW_VALUE}">+ Novo banco</option>`
   ].join("");
   els.accountInput.value = isCreatingAccount
     ? ACCOUNT_NEW_VALUE
@@ -707,12 +844,94 @@ function currentAccountValue() {
   return els.accountInput.value.trim();
 }
 
+function uniqueCards() {
+  return [...(app.state.cards || [])].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+}
+
+function fillCardInput(selectedCard = els.cardInput?.value || "") {
+  if (!els.cardInput) return;
+  const paymentMethod = els.paymentMethodInput?.value;
+  const selectedBank = currentAccountValue();
+  const cards = uniqueCards().filter((card) => {
+    if (card.bank && selectedBank && card.bank.toLowerCase() !== selectedBank.toLowerCase()) return false;
+    if (paymentMethod === "credit_card") return ["credit", "credit_debit"].includes(card.type);
+    if (paymentMethod === "debit_card") return ["debit", "credit_debit"].includes(card.type);
+    if (paymentMethod === "voucher") return card.type === "voucher";
+    return true;
+  });
+  const selected = String(selectedCard || "").trim();
+  els.cardInput.innerHTML = [
+    '<option value="">Selecionar cartão</option>',
+    ...cards.map((card) => `<option value="${escapeHTML(card.id)}">${escapeHTML(card.name)}</option>`),
+    '<option value="__new_card__">+ Novo cartão</option>'
+  ].join("");
+  els.cardInput.value = selected === "__new_card__" ? selected : (cards.some((card) => card.id === selected) ? selected : "");
+  updatePaymentMethodState();
+}
+
+function fillCardBankInput(selectedBank = els.cardBankInput?.value || "") {
+  const banks = uniqueAccounts();
+  els.cardBankInput.innerHTML = ['<option value="">Selecionar banco</option>', ...banks.map((bank) => `<option value="${escapeHTML(bank)}">${escapeHTML(bank)}</option>`), '<option value="__new_bank__">+ Novo banco</option>'].join("");
+  els.cardBankInput.value = banks.includes(selectedBank) ? selectedBank : "";
+  updateCardBankState();
+}
+
+function updateCardBankState() {
+  const creating = els.cardBankInput.value === "__new_bank__";
+  els.customCardBankInput.classList.toggle("hidden", !creating);
+  els.customCardBankInput.required = creating;
+}
+
+function updatePaymentMethodState() {
+  const isCardPayment = ["credit_card", "debit_card", "voucher"].includes(els.paymentMethodInput?.value);
+  els.cardInputGroup?.classList.toggle("hidden", !isCardPayment);
+  els.cardInput?.toggleAttribute("required", isCardPayment);
+  const creating = isCardPayment && els.cardInput?.value === "__new_card__";
+  els.btnDeleteCard?.classList.toggle("hidden", !isCardPayment || !els.cardInput?.value || creating);
+  els.customCardInput?.classList.toggle("hidden", !creating);
+  if (els.customCardInput) els.customCardInput.required = creating;
+}
+
+function currentCardValue() {
+  if (els.cardInput?.value === "__new_card__") return els.customCardInput.value.trim();
+  return els.cardInput?.value || "";
+}
+
+function registerCard(cardName, bank = currentAccountValue()) {
+  const name = String(cardName || "").trim();
+  if (!name) return "";
+  const existing = uniqueCards().find((card) => card.name.toLowerCase() === name.toLowerCase());
+  if (existing) return existing.id;
+  const card = normalizeCard({ id: uid("card"), name, bank });
+  app.state.cards = [...(app.state.cards || []), card];
+  return card.id;
+}
+
+function confirmDeleteCard() {
+  const card = uniqueCards().find((item) => item.id === els.cardInput.value);
+  if (!card) return;
+  const usageCount = app.state.transactions.filter((item) => item.cardId === card.id).length;
+  openConfirmDialog({
+    title: "Excluir cartão?",
+    message: usageCount ? `Os ${usageCount} lançamentos vinculados ficarão sem cartão.` : `Excluir "${card.name}"?`,
+    action: () => {
+      app.state.cards = (app.state.cards || []).filter((item) => item.id !== card.id);
+      app.state.transactions = app.state.transactions.map((item) => item.cardId === card.id ? { ...item, cardId: "" } : item);
+      fillCardInput("");
+      saveState();
+      renderAll();
+      showToast("Cartão excluído.");
+    }
+  });
+}
+
 function registerAccount(account) {
   const label = String(account || "").trim();
   if (!label) return;
   app.state.accounts = window.GatesAccountUtils
     ? window.GatesAccountUtils.registerAccount(app.state.accounts, label)
     : [...new Set([...(app.state.accounts || []), label])];
+  app.state.banks = [...app.state.accounts];
 }
 
 function confirmDeleteAccount() {
@@ -744,6 +963,10 @@ function deleteAccount(account) {
   );
   if (!result.removed) return;
   app.state.accounts = result.accounts;
+  app.state.banks = [...result.accounts];
+  app.state.cards = (app.state.cards || []).map((card) => (
+    (card.bank || "").toLowerCase() === account.toLowerCase() ? { ...card, bank: "", bankId: "" } : card
+  ));
   app.state.transactions = result.transactions;
   const removedKey = window.GatesAccountUtils?.identity(account) || String(account).toLowerCase();
   app.filters.account = normalizeMultiFilter(app.filters.account).filter((item) => (
@@ -1188,10 +1411,14 @@ function initCustomFormControls() {
 function renderAll() {
   syncTheme();
   fillFilters();
+  syncTransactionToolbar();
   fillCategoryInputs();
   fillAccountInput();
+  fillCardBankInput(els.cardBankInput?.value || "");
   renderCategoryIconPicker();
   renderCategoryColorPicker();
+  renderCards();
+  renderBanks();
   updateTitle();
   updatePeriodButtons();
   updateNavButtons();
@@ -1222,7 +1449,8 @@ function updateTitle() {
     transactions: "Entradas e saídas",
     planning: "Planejamento mensal",
     goals: "Metas financeiras",
-    categories: "Categorias de gastos"
+    categories: "Categorias de gastos",
+    banks: "Bancos"
   };
   els.topbarTitle.textContent = viewLabels[app.currentView];
   els.titleEyebrow.textContent = range.label;
@@ -1267,7 +1495,7 @@ function fillFilters() {
   });
 
   els.filterAccount.innerHTML = [
-    '<option value="all">Contas</option>',
+    '<option value="all">Bancos</option>',
     ...uniqueAccounts().map((account) => `<option value="${escapeHTML(account)}">${escapeHTML(account)}</option>`)
   ].join("");
   Array.from(els.filterAccount.options).forEach((option) => {
@@ -1701,13 +1929,17 @@ function renderTransactions() {
           <strong>${escapeHTML(item.description)}</strong>
           ${item.notes ? `<small>${escapeHTML(item.notes)}</small>` : ""}
           ${item.recurring ? "<small>Recorrente</small>" : ""}
+          ${installmentText(item) ? `<small>${escapeHTML(installmentText(item))}</small>` : ""}
         </td>
         <td data-label="Categoria">
           <span class="category-pill" style="background:${softColor(item.category)}; color:${categoryColor(item.category)}">
             ${escapeHTML(categoryLabel(item.category))}
           </span>
         </td>
-        <td data-label="Conta">${escapeHTML(item.account || "-")}</td>
+        <td data-label="Banco">
+          ${escapeHTML(item.account || "-")}
+          <small>${escapeHTML(paymentMethodLabel(item))}</small>
+        </td>
         <td data-label="Valor" class="${amountClass}">${sign} ${brl(item.amount)}</td>
         <td data-label="Ações">
           <div class="row-actions">
@@ -2385,6 +2617,14 @@ function setCurrentType(type) {
   });
   fillCategoryInputs();
   syncCustomFormControls();
+  const isExpense = app.currentType === "expense";
+  els.paymentFields.classList.toggle("hidden", !isExpense);
+  if (!isExpense) {
+    els.paymentMethodInput.value = "other";
+    els.cardInput.value = "";
+    els.customCardInput.value = "";
+  }
+  updatePaymentMethodState();
 }
 
 function resetTransactionForm() {
@@ -2393,20 +2633,174 @@ function resetTransactionForm() {
   els.transactionIdInput.value = "";
   els.dateInput.value = toISO(new Date());
   fillAccountInput(uniqueAccounts()[0] || "");
+  els.paymentMethodInput.value = "other";
+  fillCardInput("");
+  els.installmentInput.checked = false;
+  els.installmentCountInput.value = 2;
+  updateInstallmentState();
   els.formTitle.textContent = "Nova movimentação";
   els.submitButton.textContent = "Salvar";
   els.btnDeleteTransaction.classList.add("hidden");
   setCurrentType("income");
 }
 
+function syncTransactionToolbar() {
+  if (!els.transactionSearchInput) return;
+  els.transactionSearchInput.value = app.filters.search;
+  els.transactionPaymentFilter.value = app.filters.paymentMethod || "all";
+  els.transactionSortInput.value = app.filters.sort || "date_desc";
+}
+
+function paymentMethodLabel(item) {
+  const labels = { pix: "Pix", credit_card: "Cartão de crédito", debit_card: "Cartão de débito", cash: "Dinheiro", transfer: "Transferência", other: "Outro" };
+  const card = item.cardId ? uniqueCards().find((candidate) => candidate.id === item.cardId) : null;
+  return card ? `${labels[item.paymentMethod] || "Outro"} · ${card.name}` : (labels[item.paymentMethod] || "Outro");
+}
+
+function resetCardForm() {
+  app.editingCardId = null;
+  els.cardForm.reset();
+  els.cardTypeInput.value = "credit";
+  fillCardBankInput("");
+  els.cardClosingDayInput.value = "1";
+  els.cardDueDayInput.value = "10";
+  updateCardTypeFields();
+  els.cardSubmitButton.textContent = "Salvar cartão";
+}
+
+function updateCardTypeFields() {
+  const isVoucher = els.cardTypeInput.value === "voucher";
+  els.cardBillingFields.classList.toggle("hidden", isVoucher);
+  els.cardLimitInput.disabled = isVoucher;
+  els.cardClosingDayInput.disabled = isVoucher;
+  els.cardDueDayInput.disabled = isVoucher;
+  if (isVoucher) {
+    els.cardLimitInput.value = "0";
+    els.cardClosingDayInput.value = "1";
+    els.cardDueDayInput.value = "10";
+  }
+}
+
+function submitCard(event) {
+  event.preventDefault();
+  const editing = Boolean(app.editingCardId);
+  const card = normalizeCard({
+    id: app.editingCardId || uid("card"),
+    name: els.cardNameInput.value,
+    bank: els.cardBankInput.value === "__new_bank__" ? els.customCardBankInput.value.trim() : els.cardBankInput.value,
+    type: els.cardTypeInput.value,
+    creditLimit: Number(els.cardLimitInput.value || 0),
+    closingDay: Number(els.cardClosingDayInput.value || 1),
+    dueDay: Number(els.cardDueDayInput.value || 10)
+  });
+  if (!card || !card.bank) { showToast("Selecione ou cadastre o banco do cartão."); return; }
+  if (els.cardBankInput.value === "__new_bank__") registerAccount(els.customCardBankInput.value);
+  if (app.editingCardId) app.state.cards = app.state.cards.map((item) => item.id === card.id ? card : item);
+  else app.state.cards = [...(app.state.cards || []), card];
+  saveState();
+  resetCardForm();
+  renderAll();
+  showToast(editing ? "Cartão atualizado." : "Cartão cadastrado.");
+}
+
+function editCard(id) {
+  const card = uniqueCards().find((item) => item.id === id);
+  if (!card) return;
+  app.editingCardId = id;
+  els.cardNameInput.value = card.name;
+  fillCardBankInput(card.bank || "");
+  els.cardTypeInput.value = card.type || "credit";
+  updateCardTypeFields();
+  els.cardLimitInput.value = card.creditLimit || "";
+  els.cardClosingDayInput.value = card.closingDay || 1;
+  els.cardDueDayInput.value = card.dueDay || 10;
+  els.cardSubmitButton.textContent = "Atualizar cartão";
+  els.cardNameInput.focus();
+}
+
+function deleteCard(id) {
+  const card = uniqueCards().find((item) => item.id === id);
+  if (!card) return;
+  openConfirmDialog({ title: "Excluir cartão?", message: `Excluir "${card.name}"? Os lançamentos vinculados ficarão sem cartão.`, action: () => {
+    app.state.cards = app.state.cards.filter((item) => item.id !== id);
+    app.state.transactions = app.state.transactions.map((item) => item.cardId === id ? { ...item, cardId: "" } : item);
+    saveState(); resetCardForm(); renderAll(); showToast("Cartão excluído.");
+  }});
+}
+
+function renderCards() {
+  if (!els.cardList) return;
+  const cards = uniqueCards();
+  els.cardList.innerHTML = cards.length ? cards.map((card) => {
+    const usage = app.state.transactions.filter((item) => item.cardId === card.id).length;
+    return `<article class="card-item">
+      <div class="card-item-main"><span class="card-chip"><i data-lucide="credit-card"></i></span><div><strong>${escapeHTML(card.name)}</strong><small>${escapeHTML([card.bank, cardTypeLabel(card.type)].filter(Boolean).join(" · "))}</small></div></div>
+      <div class="card-item-meta"><span>${usage} ${usage === 1 ? "lançamento" : "lançamentos"}</span><span>${card.creditLimit ? brl(card.creditLimit) : "Sem limite informado"}</span></div>
+      <div class="row-actions"><button type="button" data-card-action="edit" data-card-id="${escapeHTML(card.id)}" aria-label="Editar cartão"><i data-lucide="pencil"></i></button><button type="button" data-card-action="delete" data-card-id="${escapeHTML(card.id)}" aria-label="Excluir cartão"><i data-lucide="trash-2"></i></button></div>
+    </article>`;
+  }).join("") : '<div class="empty-state">Nenhum cartão cadastrado.</div>';
+  refreshLucideIcons();
+}
+
+function renderBanks() {
+  if (!els.bankList) return;
+  const banks = uniqueAccounts();
+  els.bankList.innerHTML = banks.length ? banks.map((bank) => {
+    const usage = app.state.transactions.filter((item) => item.account === bank).length;
+    const cards = uniqueCards().filter((card) => card.bank?.toLowerCase() === bank.toLowerCase()).length;
+    return `<article class="bank-item"><div><strong>${escapeHTML(bank)}</strong><small>${usage} ${usage === 1 ? "lançamento" : "lançamentos"} · ${cards} ${cards === 1 ? "cartão" : "cartões"}</small></div><button class="account-delete-button" type="button" data-bank-action="delete" data-bank-name="${escapeHTML(bank)}" aria-label="Excluir banco" title="Excluir banco"><i data-lucide="trash-2"></i></button></article>`;
+  }).join("") : '<div class="empty-state">Nenhum banco cadastrado.</div>';
+  refreshLucideIcons();
+}
+
+function submitBank(event) {
+  event.preventDefault();
+  const name = els.bankNameInput.value.trim();
+  if (!name) return;
+  const before = uniqueAccounts().length;
+  registerAccount(name);
+  if (uniqueAccounts().length === before) { showToast("Esse banco já está cadastrado."); return; }
+  saveState(); els.bankForm.reset(); renderAll(); showToast("Banco cadastrado.");
+}
+
+function updateInstallmentState() {
+  const active = Boolean(els.installmentInput?.checked);
+  els.installmentCountGroup?.classList.toggle("hidden", !active);
+  if (els.installmentCountInput) els.installmentCountInput.required = active;
+}
+
+function installmentText(item) {
+  return Number(item.installmentTotal) > 1 ? `Parcela ${item.installmentNumber}/${item.installmentTotal}` : "";
+}
+
+function cardTypeLabel(type) {
+  return { credit: "Crédito", debit: "Débito", credit_debit: "Crédito e débito", voucher: "Voucher", prepaid: "Pré-pago" }[type] || "Cartão";
+}
+
 function submitTransaction(event) {
   event.preventDefault();
+  const existingTransaction = app.editingTransactionId
+    ? app.state.transactions.find((item) => item.id === app.editingTransactionId)
+    : null;
   const accountValue = currentAccountValue();
   if (els.accountInput.value === ACCOUNT_NEW_VALUE && !accountValue) {
-    showToast("Informe o nome da nova conta.");
+    showToast("Informe o nome do novo banco.");
     els.customAccountInput.focus();
     return;
   }
+  if (!accountValue) {
+    showToast("Selecione o banco da movimentação.");
+    return;
+  }
+  const paymentMethod = els.paymentMethodInput.value;
+  const cardPayment = ["credit_card", "debit_card", "voucher"].includes(paymentMethod);
+  if (cardPayment && !currentCardValue()) {
+    showToast("Selecione ou cadastre o cartão.");
+    return;
+  }
+  const cardId = cardPayment
+    ? (els.cardInput.value === "__new_card__" ? registerCard(els.customCardInput.value) : els.cardInput.value)
+    : "";
 
   const payload = normalizeTransaction({
     id: app.editingTransactionId || uid("transaction"),
@@ -2416,6 +2810,11 @@ function submitTransaction(event) {
     date: els.dateInput.value,
     category: els.categoryInput.value,
     account: accountValue,
+    paymentMethod,
+    cardId,
+    installmentGroupId: existingTransaction?.installmentGroupId || "",
+    installmentNumber: existingTransaction?.installmentNumber || 1,
+    installmentTotal: existingTransaction?.installmentTotal || 1,
     recurring: els.recurringInput.checked,
     notes: els.notesInput.value
   });
@@ -2431,7 +2830,20 @@ function submitTransaction(event) {
     app.state.transactions = app.state.transactions.map((item) => item.id === payload.id ? payload : item);
     showToast("Lançamento atualizado.");
   } else {
-    app.state.transactions.push(payload);
+    const total = els.installmentInput.checked ? Math.min(120, Math.max(2, Number(els.installmentCountInput.value || 2))) : 1;
+    const groupId = total > 1 ? uid("installment") : "";
+    const cents = Math.round(payload.amount * 100);
+    const baseCents = Math.floor(cents / total);
+    const installments = Array.from({ length: total }, (_, index) => normalizeTransaction({
+      ...payload,
+      id: total > 1 ? uid("transaction") : payload.id,
+      amount: (index === total - 1 ? cents - (baseCents * (total - 1)) : baseCents) / 100,
+      date: toISO(addMonths(fromISO(payload.date), index)),
+      installmentGroupId: groupId,
+      installmentNumber: index + 1,
+      installmentTotal: total
+    })).filter(Boolean);
+    app.state.transactions.push(...installments);
     showToast("Lançamento adicionado.");
   }
 
@@ -2454,8 +2866,13 @@ function editTransaction(id) {
   els.dateInput.value = item.date;
   els.categoryInput.value = item.category;
   fillAccountInput(item.account || "");
+  els.paymentMethodInput.value = item.paymentMethod || "other";
+  fillCardInput(item.cardId || "");
   els.notesInput.value = item.notes || "";
   els.recurringInput.checked = item.recurring;
+  els.installmentInput.checked = Number(item.installmentTotal) > 1;
+  els.installmentCountInput.value = item.installmentTotal || 2;
+  updateInstallmentState();
   els.formTitle.textContent = "Editar movimentação";
   els.submitButton.textContent = "Salvar";
   els.btnDeleteTransaction.classList.remove("hidden");
@@ -2860,7 +3277,7 @@ function generateInvoicePDF() {
               <th>Data</th>
               <th>Descri\u00e7\u00e3o</th>
               <th>Categoria</th>
-              <th>Conta</th>
+              <th>Banco</th>
               <th>Valor</th>
             </tr>
           </thead>
@@ -3387,6 +3804,20 @@ function bindEvents() {
   });
 
   els.btnGenerateInvoicePdf.addEventListener("click", generateInvoicePDF);
+  els.bankForm.addEventListener("submit", submitBank);
+  els.bankList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-bank-action]");
+    if (button?.dataset.bankAction === "delete") deleteAccount(button.dataset.bankName);
+  });
+  els.cardForm.addEventListener("submit", submitCard);
+  els.cardTypeInput.addEventListener("change", updateCardTypeFields);
+  els.cardBankInput.addEventListener("change", updateCardBankState);
+  els.cardList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-card-action]");
+    if (!button) return;
+    if (button.dataset.cardAction === "edit") editCard(button.dataset.cardId);
+    if (button.dataset.cardAction === "delete") deleteCard(button.dataset.cardId);
+  });
 
   document.querySelectorAll(".segment").forEach((button) => {
     button.addEventListener("click", () => setCurrentType(button.dataset.type));
@@ -3413,7 +3844,6 @@ function bindEvents() {
 
   els.filterType.addEventListener("change", () => {
     app.filters.type = els.filterType.value;
-    fillFilters();
     renderAll();
   });
 
@@ -3428,7 +3858,31 @@ function bindEvents() {
   });
 
   els.filterClearBtn.addEventListener("click", () => {
-    app.filters = { search: "", type: "all", category: [], account: [] };
+    app.filters = { search: "", type: "all", category: [], account: [], paymentMethod: "all", sort: "date_desc" };
+    els.searchInput.value = "";
+    renderAll();
+  });
+
+  els.transactionSearchInput.addEventListener("input", () => {
+    app.filters.search = els.transactionSearchInput.value.trim();
+    els.searchInput.value = app.filters.search;
+    renderAll();
+  });
+  els.transactionPaymentFilter.addEventListener("change", () => {
+    app.filters.paymentMethod = els.transactionPaymentFilter.value;
+    renderAll();
+  });
+  els.transactionSortInput.addEventListener("change", () => {
+    app.filters.sort = els.transactionSortInput.value;
+    renderAll();
+  });
+  els.transactionFilterClear.addEventListener("click", () => {
+    app.filters.search = "";
+    app.filters.type = "all";
+    app.filters.category = [];
+    app.filters.account = [];
+    app.filters.paymentMethod = "all";
+    app.filters.sort = "date_desc";
     els.searchInput.value = "";
     renderAll();
   });
@@ -3444,8 +3898,23 @@ function bindEvents() {
   });
   els.accountInput.addEventListener("change", () => {
     updateAccountInputState();
+    fillCardInput(els.cardInput.value);
     if (els.accountInput.value === ACCOUNT_NEW_VALUE) els.customAccountInput.focus();
   });
+  els.paymentMethodInput.addEventListener("change", () => {
+    if (!["credit_card", "debit_card", "voucher"].includes(els.paymentMethodInput.value)) {
+      els.cardInput.value = "";
+      els.customCardInput.value = "";
+    }
+    fillCardInput(els.cardInput.value);
+    updatePaymentMethodState();
+  });
+  els.cardInput.addEventListener("change", () => {
+    updatePaymentMethodState();
+    if (els.cardInput.value === "__new_card__") els.customCardInput.focus();
+  });
+  els.btnDeleteCard.addEventListener("click", confirmDeleteCard);
+  els.installmentInput.addEventListener("change", updateInstallmentState);
   els.btnDeleteAccount.addEventListener("click", confirmDeleteAccount);
   els.clearFormButton.addEventListener("click", closeTransactionDrawer);
   els.transactionDrawerOverlay.addEventListener("click", closeTransactionDrawer);
@@ -3637,6 +4106,7 @@ function bindEvents() {
 }
 
 async function init() {
+  bindAuthEvents();
   bindEvents();
   await loadData();
   app.currentView = app.state.currentView || "overview";

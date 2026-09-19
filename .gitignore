@@ -1,5 +1,9 @@
 # Local user data
 data/financeiro.json
+data/gates.sqlite
+data/gates.sqlite-shm
+data/gates.sqlite-wal
+data/backups/
 extratos/
 
 # Dependencies
@@ -16,6 +20,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.env
+.env.*
+!.env.example
 
 # OS/editor files
 .DS_Store

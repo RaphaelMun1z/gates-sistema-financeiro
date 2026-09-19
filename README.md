@@ -1,6 +1,6 @@
 # Gates - Financas
 
-Sistema financeiro pessoal estatico, sem login, sem autenticacao e sem backend obrigatorio. O app abre direto no painel e cada navegador mantem os proprios dados.
+Sistema financeiro pessoal com autenticacao, SQLite local e dados separados por usuario.
 
 ## Como rodar
 
@@ -11,19 +11,34 @@ npm start
 
 Abra `http://127.0.0.1:4173`.
 
+Copie `.env.example` para `.env` e preencha as credenciais iniciais. O `.env` está no `.gitignore` e não deve ser enviado ao Git:
+
+```powershell
+Copy-Item .env.example .env
+# edite .env com seu e-mail e sua senha
+npm start
+```
+
+Para acesso pela internet, publique este servidor atras de HTTPS e use `HOST=0.0.0.0`.
+
 Tambem e possivel abrir `index.html` diretamente, mas o servidor local evita problemas com bibliotecas carregadas pelo navegador.
 
 ## Persistencia
 
-- O estado completo fica no `localStorage` do navegador.
-- Uma instalacao nova comeca vazia.
-- Visitantes diferentes nao compartilham dados.
-- Nenhum JSON do repositorio e carregado como base inicial.
+- O estado completo fica em `data/gates.sqlite`, separado por usuario e dividido em tabelas relacionais.
+- A persistencia usa TypeORM com SQLite; entidades, datasource e repositorios ficam em `src/database/`.
+- O frontend nao usa `localStorage`; toda leitura e escrita passa pela API autenticada.
+- Senhas sao armazenadas apenas como hash bcrypt.
+- O arquivo `.env` contém apenas a configuração de inicialização; o `server.js` não contém suas credenciais.
+- Sessoes usam cookie `HttpOnly`, `SameSite=Lax`, expiram em 7 dias e podem ser encerradas pelo botao **Sair**.
+- Apos 5 tentativas invalidas, o login e bloqueado por 15 minutos por IP e e-mail.
+- Backups automaticos do SQLite sao mantidos em `data/backups/` (ate 14 arquivos).
+- A recuperacao gera um token de uso unico no log do servidor por 30 minutos. Em producao, conecte esse fluxo a um provedor SMTP para enviar o token por e-mail.
 - `data/financeiro.json` e arquivos privados de extratos devem permanecer fora do Git.
 - O botao **Exportar** gera um backup JSON com lancamentos, categorias, contas, orcamentos e metas.
 - O fluxo **Importar > Backup JSON** restaura esses dados em outro navegador, guia anonima ou dominio.
 - PDFs sao processados localmente no navegador; o arquivo nao e enviado para API externa.
-- O servidor local publica somente `index.html`, `assets/` e `src/`; dados privados e metadados do repositorio nao sao servidos.
+- O servidor publica somente `index.html`, `assets/` e `src/`; dados privados e metadados do repositorio nao sao servidos.
 
 ## Recursos principais
 
@@ -38,18 +53,16 @@ Tambem e possivel abrir `index.html` diretamente, mas o servidor local evita pro
 - Exportacao de dados em JSON.
 - Tema claro/escuro e layout responsivo.
 
-## Cloudflare Pages
+## PWA
 
-Configure como site estatico:
+- O app pode ser instalado como PWA em navegadores compatíveis.
+- O `service-worker.js` armazena o shell do app e as bibliotecas carregadas por CDN depois do primeiro acesso online.
+- Os dados financeiros ficam exclusivamente no SQLite do servidor e exigem conexão com a aplicação.
+- Para instalar, abra o app por `localhost` ou HTTPS e use a opção **Instalar aplicativo** do navegador.
 
-```text
-Framework preset: None
-Build command: vazio
-Build output directory: .
-Root directory: vazio
-```
+## Deploy
 
-Nao configure KV, D1, variaveis de autenticacao ou Pages Functions para o fluxo atual. A privacidade vem do armazenamento local isolado por navegador e da portabilidade manual pelo JSON.
+O deploy precisa executar Node.js 24 ou superior e manter o diretorio `data/` persistente. Cloudflare Pages estatico nao e suficiente para este backend SQLite.
 
 ## Testes
 
@@ -70,8 +83,13 @@ npm test
 - `src/scripts/pdf-parser.js`: parser puro de extratos e faturas.
 - `src/scripts/account-utils.js`: normalizacao e remocao de contas.
 - `src/scripts/date-utils.js`: validacao e intervalos de datas.
+- `src/database/entities.js`: entidades TypeORM das tabelas financeiras.
+- `src/database/finance-repository.js`: leitura e persistencia transacional do dominio financeiro.
+- `src/database/data-source.js`: configuracao e inicializacao do TypeORM.
+- `src/services/auth-service.js`: usuarios, sessoes, hashes e recuperacao de senha.
+- `src/server/config.js`: configuracao de ambiente e `.env`.
 - `assets/favicon.svg`: icone do app.
-- `server.js`: servidor estatico local.
+- `server.js`: rotas HTTP e servidor de arquivos.
 - `test/`: testes automatizados com `node:test`.
 
 ## Diretrizes de UX
