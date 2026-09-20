@@ -1,1530 +1,1958 @@
 <!doctype html>
 <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="theme-color" content="#f5f5f7" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <link rel="manifest" href="manifest.json" />
-        <link rel="apple-touch-icon" href="assets/icon-192.svg" />
-        <title>Gates - Finanças</title>
-        <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="stylesheet" href="src/styles/styles.css" />
-    </head>
-    <body>
-        <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
-            <div class="auth-panel">
-                <div class="auth-brand">Gates</div>
-                <h1 id="authTitle">Acesse suas finanças</h1>
-                <p class="auth-subtitle" id="authSubtitle">Entre para continuar.</p>
-                <form id="loginForm" class="auth-form">
-                    <label class="form-group"><span>E-mail</span><input id="loginEmail" type="email" autocomplete="username" required /></label>
-                    <label class="form-group"><span>Senha</span><input id="loginPassword" type="password" autocomplete="current-password" required /></label>
-                    <button class="btn-primary" type="submit">Entrar</button>
-                    <button class="auth-link" id="forgotPasswordButton" type="button">Esqueci minha senha</button>
-                </form>
-                <form id="requestResetForm" class="auth-form hidden">
-                    <label class="form-group"><span>E-mail da conta</span><input id="resetEmail" type="email" autocomplete="email" required /></label>
-                    <button class="btn-primary" type="submit">Solicitar recuperação</button>
-                    <button class="auth-link" id="backToLoginButton" type="button">Voltar para o login</button>
-                </form>
-                <form id="completeResetForm" class="auth-form hidden">
-                    <label class="form-group"><span>Token de recuperação</span><input id="resetToken" type="text" required /></label>
-                    <label class="form-group"><span>Nova senha</span><input id="resetPassword" type="password" minlength="10" autocomplete="new-password" required /></label>
-                    <button class="btn-primary" type="submit">Alterar senha</button>
-                    <button class="auth-link" id="resetLoginButton" type="button">Voltar para o login</button>
-                </form>
-                <p class="auth-error" id="authError" role="alert"></p>
-            </div>
-        </section>
-        <div
-            class="sidebar-overlay"
-            id="sidebarOverlay"
-            aria-hidden="true"
-        ></div>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="theme-color" content="#f5f5f7" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<link rel="manifest" href="manifest.json" />
+		<link rel="apple-touch-icon" href="assets/icon-192.svg" />
+		<title>Gates - Finanças</title>
+		<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="src/styles/styles.css" />
+	</head>
+	<body>
+		<section
+			class="auth-screen"
+			id="authScreen"
+			aria-labelledby="authTitle"
+		>
+			<div class="auth-panel">
+				<div class="auth-brand">Gates</div>
+				<h1 id="authTitle">Acesse suas finanças</h1>
+				<p class="auth-subtitle" id="authSubtitle">
+					Entre para continuar.
+				</p>
+				<form id="loginForm" class="auth-form">
+					<label class="form-group"
+						><span>E-mail</span
+						><input
+							id="loginEmail"
+							type="email"
+							autocomplete="username"
+							required
+					/></label>
+					<label class="form-group"
+						><span>Senha</span
+						><input
+							id="loginPassword"
+							type="password"
+							autocomplete="current-password"
+							required
+					/></label>
+					<button class="btn-primary" type="submit">Entrar</button>
+					<button
+						class="auth-link"
+						id="forgotPasswordButton"
+						type="button"
+					>
+						Esqueci minha senha
+					</button>
+				</form>
+				<form id="requestResetForm" class="auth-form hidden">
+					<label class="form-group"
+						><span>E-mail da conta</span
+						><input
+							id="resetEmail"
+							type="email"
+							autocomplete="email"
+							required
+					/></label>
+					<button class="btn-primary" type="submit">
+						Solicitar recuperação
+					</button>
+					<button
+						class="auth-link"
+						id="backToLoginButton"
+						type="button"
+					>
+						Voltar para o login
+					</button>
+				</form>
+				<form id="completeResetForm" class="auth-form hidden">
+					<label class="form-group"
+						><span>Token de recuperação</span
+						><input id="resetToken" type="text" required
+					/></label>
+					<label class="form-group"
+						><span>Nova senha</span
+						><input
+							id="resetPassword"
+							type="password"
+							minlength="10"
+							autocomplete="new-password"
+							required
+					/></label>
+					<button class="btn-primary" type="submit">
+						Alterar senha
+					</button>
+					<button
+						class="auth-link"
+						id="resetLoginButton"
+						type="button"
+					>
+						Voltar para o login
+					</button>
+				</form>
+				<p class="auth-error" id="authError" role="alert"></p>
+			</div>
+		</section>
+		<div
+			class="sidebar-overlay"
+			id="sidebarOverlay"
+			aria-hidden="true"
+		></div>
 
-        <div class="app-shell app-hidden">
-            <aside
-                class="sidebar"
-                id="sidebar"
-                aria-label="Navegação financeira"
-            >
-                <div class="sidebar-header">
-                    <a
-                        class="sidebar-brand"
-                        href="../index.html"
-                        aria-label="Voltar para agenda Gates"
-                    >
-                        <span class="brand-icon" aria-hidden="true">
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                            >
-                                <rect
-                                    x="2"
-                                    y="2"
-                                    width="7"
-                                    height="7"
-                                    rx="1.5"
-                                    fill="#15803d"
-                                ></rect>
-                                <rect
-                                    x="11"
-                                    y="2"
-                                    width="7"
-                                    height="7"
-                                    rx="1.5"
-                                    fill="#16a34a"
-                                    opacity="0.42"
-                                ></rect>
-                                <rect
-                                    x="2"
-                                    y="11"
-                                    width="7"
-                                    height="7"
-                                    rx="1.5"
-                                    fill="#16a34a"
-                                    opacity="0.62"
-                                ></rect>
-                                <rect
-                                    x="11"
-                                    y="11"
-                                    width="7"
-                                    height="7"
-                                    rx="1.5"
-                                    fill="#22c55e"
-                                    opacity="0.82"
-                                ></rect>
-                            </svg>
-                        </span>
-                        <span class="brand-copy">
-                            <span class="brand-name">Gates</span>
-                        </span>
-                    </a>
-                    <button class="auth-logout" id="logoutButton" type="button">Sair</button>
-                    <button
-                        class="sidebar-close-btn"
-                        id="sidebarCloseBtn"
-                        type="button"
-                        aria-label="Fechar menu"
-                    >
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                        >
-                            <path
-                                d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5"
-                                stroke="currentColor"
-                                stroke-width="1.8"
-                                stroke-linecap="round"
-                            ></path>
-                        </svg>
-                    </button>
-                </div>
+		<div class="app-shell app-hidden">
+			<aside
+				class="sidebar"
+				id="sidebar"
+				aria-label="Navegação financeira"
+			>
+				<div class="sidebar-header">
+					<a
+						class="sidebar-brand"
+						href="../index.html"
+						aria-label="Voltar para agenda Gates"
+					>
+						<span class="brand-icon" aria-hidden="true">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 20 20"
+								fill="none"
+							>
+								<rect
+									x="2"
+									y="2"
+									width="7"
+									height="7"
+									rx="1.5"
+									fill="#15803d"
+								></rect>
+								<rect
+									x="11"
+									y="2"
+									width="7"
+									height="7"
+									rx="1.5"
+									fill="#16a34a"
+									opacity="0.42"
+								></rect>
+								<rect
+									x="2"
+									y="11"
+									width="7"
+									height="7"
+									rx="1.5"
+									fill="#16a34a"
+									opacity="0.62"
+								></rect>
+								<rect
+									x="11"
+									y="11"
+									width="7"
+									height="7"
+									rx="1.5"
+									fill="#22c55e"
+									opacity="0.82"
+								></rect>
+							</svg>
+						</span>
+						<span class="brand-copy">
+							<span class="brand-name">Gates</span>
+						</span>
+					</a>
+					<button class="auth-logout" id="logoutButton" type="button">
+						Sair
+					</button>
+					<button
+						class="sidebar-close-btn"
+						id="sidebarCloseBtn"
+						type="button"
+						aria-label="Fechar menu"
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 18 18"
+							fill="none"
+						>
+							<path
+								d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+							></path>
+						</svg>
+					</button>
+				</div>
 
-                <div class="sidebar-new-btn-wrap">
-                    <button
-                        class="btn-primary"
-                        id="btnNewTransactionSide"
-                        type="button"
-                    >
-                        <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M8 2v12M2 8h12"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                            ></path>
-                        </svg>
-                        Novo lançamento
-                    </button>
-                </div>
+				<div class="sidebar-new-btn-wrap">
+					<button
+						class="btn-primary"
+						id="btnNewTransactionSide"
+						type="button"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+							aria-hidden="true"
+						>
+							<path
+								d="M8 2v12M2 8h12"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							></path>
+						</svg>
+						Novo lançamento
+					</button>
+				</div>
 
-                <nav class="sidebar-section" aria-label="Áreas financeiras">
-                    <span class="sidebar-section-label">Controle</span>
-                    <div class="nav-list">
-                        <button
-                            class="nav-item active"
-                            type="button"
-                            data-view="overview"
-                        >
-                            <span class="nav-icon" aria-hidden="true">
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M2.5 8.5h3v5h-3v-5ZM6.5 2.5h3v11h-3v-11ZM10.5 5.5h3v8h-3v-8Z"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                        stroke-linejoin="round"
-                                    ></path>
-                                </svg>
-                            </span>
-                            Visão geral
-                        </button>
-                        <button
-                            class="nav-item"
-                            type="button"
-                            data-view="transactions"
-                        >
-                            <span class="nav-icon" aria-hidden="true">
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M3 4h10M3 8h10M3 12h6"
-                                        stroke="currentColor"
-                                        stroke-width="1.6"
-                                        stroke-linecap="round"
-                                    ></path>
-                                </svg>
-                            </span>
-                            Lançamentos
-                        </button>
-                        <button
-                            class="nav-item"
-                            type="button"
-                            data-view="planning"
-                        >
-                            <span class="nav-icon" aria-hidden="true">
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M3 3.5h10v9H3v-9ZM3 6.5h10M6 3.5v9"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                        stroke-linejoin="round"
-                                    ></path>
-                                </svg>
-                            </span>
-                            Planejamento
-                        </button>
-                        <button
-                            class="nav-item"
-                            type="button"
-                            data-view="goals"
-                        >
-                            <span class="nav-icon" aria-hidden="true">
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M8 13.5A5.5 5.5 0 1 0 8 2.5a5.5 5.5 0 0 0 0 11ZM8 10.5A2.5 2.5 0 1 0 8 5.5a2.5 2.5 0 0 0 0 5Z"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                    ></path>
-                                </svg>
-                            </span>
-                            Metas
-                        </button>
-                        <button
-                            class="nav-item"
-                            type="button"
-                            data-view="categories"
-                        >
-                            <span class="nav-icon" aria-hidden="true">
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M3 4.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM3 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM3 14.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM6.5 3h6.5M6.5 8h6.5M6.5 13h6.5"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                    ></path>
-                                </svg>
-                            </span>
-                            Categorias
-                        </button>
-                        <button class="nav-item" type="button" data-view="banks">
-                            <span class="nav-icon" aria-hidden="true"><i data-lucide="landmark"></i></span>
-                            Bancos
-                        </button>
-                    </div>
-                </nav>
+				<nav class="sidebar-section" aria-label="Áreas financeiras">
+					<span class="sidebar-section-label">Controle</span>
+					<div class="nav-list">
+						<button
+							class="nav-item active"
+							type="button"
+							data-view="overview"
+						>
+							<span class="nav-icon" aria-hidden="true">
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M2.5 8.5h3v5h-3v-5ZM6.5 2.5h3v11h-3v-11ZM10.5 5.5h3v8h-3v-8Z"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linejoin="round"
+									></path>
+								</svg>
+							</span>
+							Visão geral
+						</button>
+						<button
+							class="nav-item"
+							type="button"
+							data-view="transactions"
+						>
+							<span class="nav-icon" aria-hidden="true">
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M3 4h10M3 8h10M3 12h6"
+										stroke="currentColor"
+										stroke-width="1.6"
+										stroke-linecap="round"
+									></path>
+								</svg>
+							</span>
+							Lançamentos
+						</button>
+						<button
+							class="nav-item"
+							type="button"
+							data-view="planning"
+						>
+							<span class="nav-icon" aria-hidden="true">
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M3 3.5h10v9H3v-9ZM3 6.5h10M6 3.5v9"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linejoin="round"
+									></path>
+								</svg>
+							</span>
+							Planejamento
+						</button>
+						<button
+							class="nav-item"
+							type="button"
+							data-view="goals"
+						>
+							<span class="nav-icon" aria-hidden="true">
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M8 13.5A5.5 5.5 0 1 0 8 2.5a5.5 5.5 0 0 0 0 11ZM8 10.5A2.5 2.5 0 1 0 8 5.5a2.5 2.5 0 0 0 0 5Z"
+										stroke="currentColor"
+										stroke-width="1.5"
+									></path>
+								</svg>
+							</span>
+							Metas
+						</button>
+						<button
+							class="nav-item"
+							type="button"
+							data-view="categories"
+						>
+							<span class="nav-icon" aria-hidden="true">
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M3 4.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM3 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM3 14.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM6.5 3h6.5M6.5 8h6.5M6.5 13h6.5"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+									></path>
+								</svg>
+							</span>
+							Categorias
+						</button>
+						<button
+							class="nav-item"
+							type="button"
+							data-view="banks"
+						>
+							<span class="nav-icon" aria-hidden="true"
+								><i data-lucide="landmark"></i
+							></span>
+							Bancos
+						</button>
+					</div>
+				</nav>
 
-                <div class="sidebar-section">
-                    <span class="sidebar-section-label">Período</span>
-                    <div
-                        class="sidebar-view-toggle"
-                        role="group"
-                        aria-label="Resumo por período"
-                    >
-                        <button
-                            class="period-btn"
-                            type="button"
-                            data-period="all"
-                        >
-                            Geral
-                        </button>
-                        <button
-                            class="period-btn active"
-                            type="button"
-                            data-period="month"
-                        >
-                            Mês
-                        </button>
-                    </div>
-                </div>
+				<div class="sidebar-section">
+					<span class="sidebar-section-label">Período</span>
+					<div
+						class="sidebar-view-toggle"
+						role="group"
+						aria-label="Resumo por período"
+					>
+						<button
+							class="period-btn"
+							type="button"
+							data-period="all"
+						>
+							Geral
+						</button>
+						<button
+							class="period-btn active"
+							type="button"
+							data-period="month"
+						>
+							Mês
+						</button>
+					</div>
+				</div>
 
-                <section
-                    class="sidebar-section sidebar-snapshot"
-                    aria-label="Resumo lateral"
-                >
-                    <span class="sidebar-section-label">Resumo atual</span>
-                    <div class="snapshot-card">
-                        <span>Saldo do período</span>
-                        <strong id="sideBalance">R$ 0,00</strong>
-                        <small id="sideBalanceHint"
-                            >Nenhum lançamento ainda</small
-                        >
-                    </div>
-                    <div class="mini-insights" id="miniInsights"></div>
-                </section>
+				<section
+					class="sidebar-section sidebar-snapshot"
+					aria-label="Resumo lateral"
+				>
+					<span class="sidebar-section-label">Resumo atual</span>
+					<div class="snapshot-card">
+						<span>Saldo do período</span>
+						<strong id="sideBalance">R$ 0,00</strong>
+						<small id="sideBalanceHint"
+							>Nenhum lançamento ainda</small
+						>
+					</div>
+					<div class="mini-insights" id="miniInsights"></div>
+				</section>
 
-                <div class="sidebar-data">
-                    <span class="sidebar-section-label">Arquivo</span>
-                    <div class="data-actions">
-                        <button
-                            class="data-btn"
-                            id="btnImportJson"
-                            type="button"
-                        >
-                            Importar
-                        </button>
-                        <button
-                            class="data-btn primary"
-                            id="btnExportJson"
-                            type="button"
-                        >
-                            Exportar
-                        </button>
-                        <input
-                            id="importJsonInput"
-                            type="file"
-                            accept=".json,application/json"
-                            hidden
-                        />
-                        <input
-                            id="importPdfInput"
-                            type="file"
-                            accept=".pdf,application/pdf"
-                            hidden
-                        />
-                    </div>
-                </div>
-            </aside>
+				<div class="sidebar-data">
+					<span class="sidebar-section-label">Arquivo</span>
+					<div class="data-actions">
+						<button
+							class="data-btn"
+							id="btnImportJson"
+							type="button"
+						>
+							Importar
+						</button>
+						<button
+							class="data-btn primary"
+							id="btnExportJson"
+							type="button"
+						>
+							Exportar
+						</button>
+						<input
+							id="importJsonInput"
+							type="file"
+							accept=".json,application/json"
+							hidden
+						/>
+						<input
+							id="importPdfInput"
+							type="file"
+							accept=".pdf,application/pdf"
+							hidden
+						/>
+					</div>
+				</div>
+			</aside>
 
-            <main class="main-area">
-                <header class="topbar">
-                    <div class="topbar-left">
-                        <button
-                            class="hamburger-btn"
-                            id="hamburgerBtn"
-                            type="button"
-                            aria-label="Abrir menu"
-                            aria-expanded="false"
-                        >
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    d="M3 5h14M3 10h14M3 15h14"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linecap="round"
-                                ></path>
-                            </svg>
-                        </button>
-                        <div class="nav-controls">
-                            <button
-                                class="nav-btn"
-                                id="btnPrev"
-                                type="button"
-                                aria-label="Período anterior"
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M10 3L6 8l4 5"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    ></path>
-                                </svg>
-                            </button>
-                            <button
-                                class="nav-btn today-btn"
-                                id="btnToday"
-                                type="button"
-                            >
-                                Hoje
-                            </button>
-                            <button
-                                class="nav-btn"
-                                id="btnNext"
-                                type="button"
-                                aria-label="Próximo período"
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                >
-                                    <path
-                                        d="M6 3l4 5-4 5"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    ></path>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="title-block">
-                            <span class="eyebrow" id="titleEyebrow"
-                                >Finanças pessoais</span
-                            >
-                            <h1 class="topbar-title" id="topbarTitle">
-                                Visão geral
-                            </h1>
-                        </div>
-                    </div>
+			<main class="main-area">
+				<header class="topbar">
+					<div class="topbar-left">
+						<button
+							class="hamburger-btn"
+							id="hamburgerBtn"
+							type="button"
+							aria-label="Abrir menu"
+							aria-expanded="false"
+						>
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 20 20"
+								fill="none"
+								aria-hidden="true"
+							>
+								<path
+									d="M3 5h14M3 10h14M3 15h14"
+									stroke="currentColor"
+									stroke-width="1.8"
+									stroke-linecap="round"
+								></path>
+							</svg>
+						</button>
+						<div class="nav-controls">
+							<button
+								class="nav-btn"
+								id="btnPrev"
+								type="button"
+								aria-label="Período anterior"
+							>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M10 3L6 8l4 5"
+										stroke="currentColor"
+										stroke-width="1.8"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									></path>
+								</svg>
+							</button>
+							<button
+								class="nav-btn today-btn"
+								id="btnToday"
+								type="button"
+							>
+								Hoje
+							</button>
+							<button
+								class="nav-btn"
+								id="btnNext"
+								type="button"
+								aria-label="Próximo período"
+							>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M6 3l4 5-4 5"
+										stroke="currentColor"
+										stroke-width="1.8"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									></path>
+								</svg>
+							</button>
+						</div>
+						<div class="title-block">
+							<span class="eyebrow" id="titleEyebrow"
+								>Finanças pessoais</span
+							>
+							<h1 class="topbar-title" id="topbarTitle">
+								Visão geral
+							</h1>
+						</div>
+					</div>
 
-                    <div class="topbar-right">
-                        <div class="search-wrap">
-                            <svg
-                                class="search-icon"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                aria-hidden="true"
-                            >
-                                <circle
-                                    cx="7"
-                                    cy="7"
-                                    r="4.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.6"
-                                ></circle>
-                                <path
-                                    d="M10.5 10.5L13 13"
-                                    stroke="currentColor"
-                                    stroke-width="1.6"
-                                    stroke-linecap="round"
-                                ></path>
-                            </svg>
-                            <input
-                                type="search"
-                                class="search-input"
-                                id="searchInput"
-                                placeholder="Buscar lançamentos..."
-                                aria-label="Buscar lançamentos"
-                            />
-                        </div>
-                        <div
-                            class="view-toggle"
-                            role="group"
-                            aria-label="Resumo por período"
-                        >
-                            <button
-                                class="period-btn"
-                                type="button"
-                                data-period="all"
-                            >
-                                Geral
-                            </button>
-                            <button
-                                class="period-btn active"
-                                type="button"
-                                data-period="month"
-                            >
-                                Mês
-                            </button>
-                            <button
-                                class="period-btn"
-                                type="button"
-                                data-period="week"
-                            >
-                                Semana
-                            </button>
-                        </div>
-                        <button
-                            class="theme-toggle-btn"
-                            id="themeToggleBtn"
-                            type="button"
-                            aria-label="Alternar tema"
-                        >
-                            <svg
-                                class="icon-moon"
-                                width="18"
-                                height="18"
-                                viewBox="0 0 18 18"
-                                fill="none"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    d="M12.9 11.1A6 6 0 0 1 6.9 2.2a6.5 6.5 0 1 0 8.9 8.9c-.9.3-1.9.3-2.9 0z"
-                                    stroke="currentColor"
-                                    stroke-width="1.7"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                ></path>
-                            </svg>
-                            <svg
-                                class="icon-sun hidden"
-                                width="18"
-                                height="18"
-                                viewBox="0 0 18 18"
-                                fill="none"
-                                aria-hidden="true"
-                            >
-                                <circle
-                                    cx="9"
-                                    cy="9"
-                                    r="3.3"
-                                    stroke="currentColor"
-                                    stroke-width="1.7"
-                                ></circle>
-                                <path
-                                    d="M9 2.2v2M9 13.8v2M2.2 9h2M13.8 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M13.8 4.2l-1.4 1.4M5.6 12.4l-1.4 1.4"
-                                    stroke="currentColor"
-                                    stroke-width="1.7"
-                                    stroke-linecap="round"
-                                ></path>
-                            </svg>
-                        </button>
-                        <button
-                            class="btn-primary topbar-new-btn"
-                            id="btnNewTransactionTop"
-                            type="button"
-                        >
-                            <svg
-                                width="15"
-                                height="15"
-                                viewBox="0 0 15 15"
-                                fill="none"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    d="M7.5 1.5v12M1.5 7.5h12"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                ></path>
-                            </svg>
-                            Novo
-                        </button>
-                    </div>
-                </header>
+					<div class="topbar-right">
+						<div class="search-wrap">
+							<svg
+								class="search-icon"
+								width="16"
+								height="16"
+								viewBox="0 0 16 16"
+								fill="none"
+								aria-hidden="true"
+							>
+								<circle
+									cx="7"
+									cy="7"
+									r="4.5"
+									stroke="currentColor"
+									stroke-width="1.6"
+								></circle>
+								<path
+									d="M10.5 10.5L13 13"
+									stroke="currentColor"
+									stroke-width="1.6"
+									stroke-linecap="round"
+								></path>
+							</svg>
+							<input
+								type="search"
+								class="search-input"
+								id="searchInput"
+								placeholder="Buscar lançamentos..."
+								aria-label="Buscar lançamentos"
+							/>
+						</div>
+						<div
+							class="view-toggle"
+							role="group"
+							aria-label="Resumo por período"
+						>
+							<button
+								class="period-btn"
+								type="button"
+								data-period="all"
+							>
+								Geral
+							</button>
+							<button
+								class="period-btn active"
+								type="button"
+								data-period="month"
+							>
+								Mês
+							</button>
+							<button
+								class="period-btn"
+								type="button"
+								data-period="week"
+							>
+								Semana
+							</button>
+						</div>
+						<button
+							class="theme-toggle-btn"
+							id="themeToggleBtn"
+							type="button"
+							aria-label="Alternar tema"
+						>
+							<svg
+								class="icon-moon"
+								width="18"
+								height="18"
+								viewBox="0 0 18 18"
+								fill="none"
+								aria-hidden="true"
+							>
+								<path
+									d="M12.9 11.1A6 6 0 0 1 6.9 2.2a6.5 6.5 0 1 0 8.9 8.9c-.9.3-1.9.3-2.9 0z"
+									stroke="currentColor"
+									stroke-width="1.7"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								></path>
+							</svg>
+							<svg
+								class="icon-sun hidden"
+								width="18"
+								height="18"
+								viewBox="0 0 18 18"
+								fill="none"
+								aria-hidden="true"
+							>
+								<circle
+									cx="9"
+									cy="9"
+									r="3.3"
+									stroke="currentColor"
+									stroke-width="1.7"
+								></circle>
+								<path
+									d="M9 2.2v2M9 13.8v2M2.2 9h2M13.8 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M13.8 4.2l-1.4 1.4M5.6 12.4l-1.4 1.4"
+									stroke="currentColor"
+									stroke-width="1.7"
+									stroke-linecap="round"
+								></path>
+							</svg>
+						</button>
+						<button
+							class="btn-primary topbar-new-btn"
+							id="btnNewTransactionTop"
+							type="button"
+						>
+							<svg
+								width="15"
+								height="15"
+								viewBox="0 0 15 15"
+								fill="none"
+								aria-hidden="true"
+							>
+								<path
+									d="M7.5 1.5v12M1.5 7.5h12"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+								></path>
+							</svg>
+							Novo
+						</button>
+					</div>
+				</header>
 
-                <section
-                    class="filters-bar"
-                    aria-label="Filtros financeiros"
-                >
-                    <div class="filters-inner">
-                        <span class="filters-label">Filtros:</span>
-                        <select
-                            class="filter-select"
-                            id="filterType"
-                            aria-label="Filtrar por tipo"
-                        >
-                            <option value="all">Tipo</option>
-                            <option value="income">Entradas</option>
-                            <option value="expense">Saídas</option>
-                        </select>
-                        <select
-                            class="filter-select"
-                            id="filterCategory"
-                            aria-label="Filtrar por categoria"
-                            data-multi-label-singular="categoria"
-                            data-multi-label-plural="categorias"
-                            multiple
-                        >
-                            <option value="all">Categorias</option>
-                        </select>
-                        <select
-                            class="filter-select"
-                            id="filterAccount"
-                            aria-label="Filtrar por banco"
-                            data-multi-label-singular="banco"
-                            data-multi-label-plural="bancos"
-                            multiple
-                        >
-                            <option value="all">Bancos</option>
-                        </select>
-                        <button
-                            class="filter-clear-btn"
-                            id="filterClearBtn"
-                            type="button"
-                            aria-label="Limpar filtros"
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                            >
-                                <path
-                                    d="M11 3L3 11M3 3l8 8"
-                                    stroke="currentColor"
-                                    stroke-width="1.6"
-                                    stroke-linecap="round"
-                                ></path>
-                            </svg>
-                            Limpar
-                        </button>
-                    </div>
-                </section>
+				<section class="filters-bar" aria-label="Filtros financeiros">
+					<div class="filters-inner">
+						<span class="filters-label">Filtros:</span>
+						<select
+							class="filter-select"
+							id="filterType"
+							aria-label="Filtrar por tipo"
+						>
+							<option value="all">Tipo</option>
+							<option value="income">Entradas</option>
+							<option value="expense">Saídas</option>
+						</select>
+						<select
+							class="filter-select"
+							id="filterCategory"
+							aria-label="Filtrar por categoria"
+							data-multi-label-singular="categoria"
+							data-multi-label-plural="categorias"
+							multiple
+						>
+							<option value="all">Categorias</option>
+						</select>
+						<select
+							class="filter-select"
+							id="filterAccount"
+							aria-label="Filtrar por banco"
+							data-multi-label-singular="banco"
+							data-multi-label-plural="bancos"
+							multiple
+						>
+							<option value="all">Bancos</option>
+						</select>
+						<button
+							class="filter-clear-btn"
+							id="filterClearBtn"
+							type="button"
+							aria-label="Limpar filtros"
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M11 3L3 11M3 3l8 8"
+									stroke="currentColor"
+									stroke-width="1.6"
+									stroke-linecap="round"
+								></path>
+							</svg>
+							Limpar
+						</button>
+					</div>
+				</section>
 
-                <div class="content-area">
-                    <section class="finance-workspace">
-                        <section class="view-panel" id="banksView" aria-label="Bancos">
-                            <div class="banks-workspace">
-                                <article class="panel">
-                                    <div class="panel-heading"><div><span class="eyebrow">Instituições</span><h2>Gerenciar bancos</h2></div></div>
-                                    <form class="bank-form" id="bankForm">
-                                        <label class="form-group"><span>Nome do banco</span><input id="bankNameInput" type="text" placeholder="Ex.: Nubank" required /></label>
-                                        <button class="btn-primary" type="submit">Adicionar banco</button>
-                                    </form>
-                                    <div class="bank-list" id="bankList"></div>
-                                </article>
-                            </div>
-                            <div class="cards-workspace">
-                                <article class="panel">
-                                    <div class="panel-heading">
-                                        <div><span class="eyebrow">Meios de pagamento</span><h2>Cadastrar cartão</h2></div>
-                                    </div>
-                                    <form class="card-form" id="cardForm">
-                                        <label class="form-group"><span>Nome do cartão</span><input id="cardNameInput" type="text" placeholder="Ex.: Nubank principal" required></label>
-                                        <label class="form-group"><span>Banco</span><select id="cardBankInput" required></select><input class="hidden" id="customCardBankInput" type="text" placeholder="Nome do novo banco" autocomplete="off" /></label>
-                                        <label class="form-group"><span>Tipo do cartão</span><select id="cardTypeInput"><option value="credit">Crédito</option><option value="debit">Débito</option><option value="credit_debit">Crédito e débito</option><option value="voucher">Voucher</option><option value="prepaid">Pré-pago</option></select></label>
-                                        <div class="form-row" id="cardBillingFields">
-                                            <label class="form-group"><span>Limite</span><input id="cardLimitInput" type="number" min="0" step="0.01" placeholder="0,00" /></label>
-                                            <label class="form-group"><span>Fechamento</span><input id="cardClosingDayInput" type="number" min="1" max="31" value="1" /></label>
-                                            <label class="form-group"><span>Vencimento</span><input id="cardDueDayInput" type="number" min="1" max="31" value="10" /></label>
-                                        </div>
-                                        <button class="btn-primary" type="submit" id="cardSubmitButton">Salvar cartão</button>
-                                    </form>
-                                </article>
-                                <article class="panel">
-                                    <div class="panel-heading"><div><span class="eyebrow">Meios de pagamento</span><h2>Cartões dos bancos</h2></div></div>
-                                    <div class="card-list" id="cardList"></div>
-                                </article>
-                            </div>
-                        </section>
+				<div class="content-area">
+					<section class="finance-workspace">
+						<section
+							class="view-panel"
+							id="banksView"
+							aria-label="Bancos"
+						>
+							<div class="banks-workspace">
+								<article class="panel">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Instituições</span
+											>
+											<h2>Gerenciar bancos</h2>
+										</div>
+									</div>
+									<form class="bank-form" id="bankForm">
+										<label class="form-group"
+											><span>Nome do banco</span
+											><input
+												id="bankNameInput"
+												type="text"
+												placeholder="Ex.: Nubank"
+												required
+										/></label>
+										<button
+											class="btn-primary"
+											type="submit"
+										>
+											Adicionar banco
+										</button>
+									</form>
+									<div class="bank-list" id="bankList"></div>
+								</article>
+							</div>
+							<div class="cards-workspace">
+								<article class="panel">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Meios de pagamento</span
+											>
+											<h2>Cadastrar cartão</h2>
+										</div>
+									</div>
+									<form class="card-form" id="cardForm">
+										<label class="form-group"
+											><span>Nome do cartão</span
+											><input
+												id="cardNameInput"
+												type="text"
+												placeholder="Ex.: Nubank principal"
+												required
+										/></label>
+										<label class="form-group"
+											><span>Banco</span
+											><select
+												id="cardBankInput"
+												required
+											></select
+											><input
+												class="hidden"
+												id="customCardBankInput"
+												type="text"
+												placeholder="Nome do novo banco"
+												autocomplete="off"
+										/></label>
+										<label class="form-group"
+											><span>Tipo do cartão</span
+											><select id="cardTypeInput">
+												<option value="credit">
+													Crédito
+												</option>
+												<option value="debit">
+													Débito
+												</option>
+												<option value="credit_debit">
+													Crédito e débito
+												</option>
+												<option value="voucher">
+													Voucher
+												</option>
+												<option value="prepaid">
+													Pré-pago
+												</option>
+											</select></label
+										>
+										<div
+											class="form-row"
+											id="cardBillingFields"
+										>
+											<label class="form-group"
+												><span>Limite</span
+												><input
+													id="cardLimitInput"
+													type="number"
+													min="0"
+													step="0.01"
+													placeholder="0,00"
+											/></label>
+											<label class="form-group"
+												><span>Fechamento</span
+												><input
+													id="cardClosingDayInput"
+													type="number"
+													min="1"
+													max="31"
+													value="1"
+											/></label>
+											<label class="form-group"
+												><span>Vencimento</span
+												><input
+													id="cardDueDayInput"
+													type="number"
+													min="1"
+													max="31"
+													value="10"
+											/></label>
+										</div>
+										<button
+											class="btn-primary"
+											type="submit"
+											id="cardSubmitButton"
+										>
+											Salvar cartão
+										</button>
+									</form>
+								</article>
+								<article class="panel">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Meios de pagamento</span
+											>
+											<h2>Cartões dos bancos</h2>
+										</div>
+									</div>
+									<div class="card-list" id="cardList"></div>
+								</article>
+							</div>
+						</section>
 
-                        <section
-                            class="metrics-grid"
-                            aria-label="Indicadores financeiros"
-                        >
-                            <article class="metric-card accent-income">
-                                <span>Entradas</span>
-                                <strong id="incomeTotal">R$ 0,00</strong>
-                                <small id="incomeMeta">0 lançamentos</small>
-                            </article>
-                            <article class="metric-card accent-expense">
-                                <span>Saídas</span>
-                                <strong id="expenseTotal">R$ 0,00</strong>
-                                <small id="expenseMeta">0 lançamentos</small>
-                            </article>
-                            <article class="metric-card accent-balance">
-                                <span>Saldo atual</span>
-                                <strong id="balanceTotal">R$ 0,00</strong>
-                                <small id="balanceMeta"
-                                    >Resultado do período</small
-                                >
-                            </article>
-                            <article class="metric-card accent-goal">
-                                <span>Meta principal</span>
-                                <strong id="mainGoalTotal">0%</strong>
-                                <small id="mainGoalMeta">Sem meta ativa</small>
-                            </article>
-                        </section>
+						<section
+							class="metrics-grid"
+							aria-label="Indicadores financeiros"
+						>
+							<article class="metric-card accent-income">
+								<span>Entradas</span>
+								<strong id="incomeTotal">R$ 0,00</strong>
+								<small id="incomeMeta">0 lançamentos</small>
+							</article>
+							<article class="metric-card accent-expense">
+								<span>Saídas</span>
+								<strong id="expenseTotal">R$ 0,00</strong>
+								<small id="expenseMeta">0 lançamentos</small>
+							</article>
+							<article class="metric-card accent-balance">
+								<span>Saldo atual</span>
+								<strong id="balanceTotal">R$ 0,00</strong>
+								<button
+									class="balance-breakdown-toggle"
+									id="balanceBreakdownToggle"
+									type="button"
+									aria-label="Mostrar saldos por banco"
+									aria-expanded="false"
+									aria-controls="balanceBreakdownPopup"
+								>
+									<svg
+										width="16"
+										height="16"
+										viewBox="0 0 16 16"
+										fill="none"
+										aria-hidden="true"
+									>
+										<path
+											d="m4 6 4 4 4-4"
+											stroke="currentColor"
+											stroke-width="1.7"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+								</button>
+								<div
+									class="balance-breakdown-popup hidden"
+									id="balanceBreakdownPopup"
+									role="dialog"
+									aria-label="Saldos individuais dos bancos"
+								>
+									<div class="balance-breakdown-heading">
+										<strong>Saldos por banco</strong>
+									</div>
+									<div
+										class="balance-breakdown-list"
+										id="balanceBreakdownList"
+									></div>
+								</div>
+								<small id="balanceMeta"
+									>Resultado do período</small
+								>
+							</article>
+							<article class="metric-card accent-goal">
+								<span>Meta principal</span>
+								<strong id="mainGoalTotal">0%</strong>
+								<small id="mainGoalMeta">Sem meta ativa</small>
+							</article>
+						</section>
 
-                        <section
-                            class="view-panel active"
-                            id="overviewView"
-                            aria-label="Visão geral financeira"
-                        >
-                            <div class="dashboard-grid">
-                                <article class="panel panel-wide">
-                                    <div class="panel-heading">
-                                        <div>
-                                            <span class="eyebrow"
-                                                >Fluxo financeiro</span
-                                            >
-                                            <h2>Evolução do saldo</h2>
-                                        </div>
-                                    </div>
-                                    <div class="chart-frame chart-frame-wide">
-                                        <canvas
-                                            id="cashflowChart"
-                                            aria-label="Gráfico de saldo acumulado"
-                                        ></canvas>
-                                    </div>
-                                </article>
+						<section
+							class="view-panel active"
+							id="overviewView"
+							aria-label="Visão geral financeira"
+						>
+							<div class="dashboard-grid">
+								<article class="panel panel-wide">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Fluxo financeiro</span
+											>
+											<h2>Evolução do saldo</h2>
+										</div>
+									</div>
+									<div class="chart-frame chart-frame-wide">
+										<canvas
+											id="cashflowChart"
+											aria-label="Gráfico de saldo acumulado"
+										></canvas>
+									</div>
+								</article>
 
-                                <article class="panel">
-                                    <div class="panel-heading">
-                                        <div>
-                                            <span class="eyebrow"
-                                                >Composição</span
-                                            >
-                                            <h2 id="categoryChartTitle">
-                                                Gastos por categoria
-                                            </h2>
-                                        </div>
-                                        <select
-                                            class="chart-select"
-                                            id="categoryChartType"
-                                            aria-label="Tipo do grafico de categorias"
-                                        >
-                                            <option value="expense">
-                                                Sa&iacute;das
-                                            </option>
-                                            <option value="income">
-                                                Entradas
-                                            </option>
-                                            <option value="all">Ambos</option>
-                                        </select>
-                                    </div>
-                                    <div class="chart-frame">
-                                        <canvas
-                                            id="categoryChart"
-                                            aria-label="Gráfico de gastos por categoria"
-                                        ></canvas>
-                                    </div>
-                                    <div
-                                        class="legend-list"
-                                        id="categoryLegend"
-                                    ></div>
-                                </article>
-                            </div>
+								<article class="panel">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Composição</span
+											>
+											<h2 id="categoryChartTitle">
+												Gastos por categoria
+											</h2>
+										</div>
+										<select
+											class="chart-select"
+											id="categoryChartType"
+											aria-label="Tipo do grafico de categorias"
+										>
+											<option value="expense">
+												Sa&iacute;das
+											</option>
+											<option value="income">
+												Entradas
+											</option>
+											<option value="all">Ambos</option>
+										</select>
+									</div>
+									<div class="chart-frame">
+										<canvas
+											id="categoryChart"
+											aria-label="Gráfico de gastos por categoria"
+										></canvas>
+									</div>
+									<div
+										class="legend-list"
+										id="categoryLegend"
+									></div>
+								</article>
+							</div>
 
-                            <div class="overview-lower">
-                                <article class="panel">
-                                    <div class="panel-heading">
-                                        <div>
-                                            <span class="eyebrow">Alertas</span>
-                                            <h2>Insights financeiros</h2>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="insight-list"
-                                        id="insightList"
-                                    ></div>
-                                </article>
+							<div class="overview-lower">
+								<article class="panel">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow">Alertas</span>
+											<h2>Insights financeiros</h2>
+										</div>
+									</div>
+									<div
+										class="insight-list"
+										id="insightList"
+									></div>
+								</article>
 
-                                <article class="panel">
-                                    <div class="panel-heading">
-                                        <div>
-                                            <span class="eyebrow"
-                                                >Próximos</span
-                                            >
-                                            <h2>Compromissos previstos</h2>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="upcoming-list"
-                                        id="upcomingList"
-                                    ></div>
-                                </article>
-                            </div>
-                        </section>
+								<article class="panel">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Próximos</span
+											>
+											<h2>Compromissos previstos</h2>
+										</div>
+									</div>
+									<div
+										class="upcoming-list"
+										id="upcomingList"
+									></div>
+								</article>
+							</div>
+						</section>
 
-                        <section
-                            class="view-panel"
-                            id="transactionsView"
-                            aria-label="Histórico de transações"
-                        >
-                            <article class="panel">
-                                <div class="panel-heading table-heading">
-                                    <div>
-                                        <span class="eyebrow">Histórico</span>
-                                        <h2>Entradas e saídas</h2>
-                                    </div>
-                                    <button
-                                        class="invoice-pdf-btn"
-                                        id="btnGenerateInvoicePdf"
-                                        type="button"
-                                    >
-                                        <svg
-                                            width="15"
-                                            height="15"
-                                            viewBox="0 0 15 15"
-                                            fill="none"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                d="M4 1.8h4.4L11.5 5v8.2H4V1.8Z"
-                                                stroke="currentColor"
-                                                stroke-width="1.35"
-                                                stroke-linejoin="round"
-                                            ></path>
-                                            <path
-                                                d="M8.4 1.8V5h3.1M5.6 8h4.2M5.6 10.2h4.2"
-                                                stroke="currentColor"
-                                                stroke-width="1.35"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                            ></path>
-                                        </svg>
-                                        Gerar fatura PDF
-                                    </button>
-                                </div>
-                                <div class="transaction-toolbar" aria-label="Filtros e ordenação de lançamentos">
-                                    <input id="transactionSearchInput" type="search" placeholder="Buscar nesta lista" aria-label="Buscar lançamentos" />
-                                    <select id="transactionPaymentFilter" aria-label="Filtrar por meio de pagamento">
-                                        <option value="all">Todos os meios</option>
-                                        <option value="pix">Pix</option>
-                                        <option value="credit_card">Cartão de crédito</option>
-                                        <option value="debit_card">Cartão de débito</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="cash">Dinheiro</option>
-                                        <option value="transfer">Transferência</option>
-                                        <option value="other">Outro</option>
-                                    </select>
-                                    <select id="transactionSortInput" aria-label="Ordenar lançamentos">
-                                        <option value="date_desc">Mais recentes</option>
-                                        <option value="date_asc">Mais antigos</option>
-                                        <option value="amount_desc">Maior valor</option>
-                                        <option value="amount_asc">Menor valor</option>
-                                        <option value="description">Descrição</option>
-                                    </select>
-                                    <button class="filter-clear-btn" id="transactionFilterClear" type="button">Limpar</button>
-                                </div>
-                                <div class="table-wrap">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Data</th>
-                                                <th>Descrição</th>
-                                                <th>Categoria</th>
-                                                <th>Banco</th>
-                                                <th>Valor</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="transactionTable"></tbody>
-                                    </table>
-                                </div>
-                            </article>
-                        </section>
+						<section
+							class="view-panel"
+							id="transactionsView"
+							aria-label="Histórico de transações"
+						>
+							<article class="panel">
+								<div class="panel-heading table-heading">
+									<div>
+										<span class="eyebrow">Histórico</span>
+										<h2>Entradas e saídas</h2>
+									</div>
+									<button
+										class="invoice-pdf-btn"
+										id="btnGenerateInvoicePdf"
+										type="button"
+									>
+										<svg
+											width="15"
+											height="15"
+											viewBox="0 0 15 15"
+											fill="none"
+											aria-hidden="true"
+										>
+											<path
+												d="M4 1.8h4.4L11.5 5v8.2H4V1.8Z"
+												stroke="currentColor"
+												stroke-width="1.35"
+												stroke-linejoin="round"
+											></path>
+											<path
+												d="M8.4 1.8V5h3.1M5.6 8h4.2M5.6 10.2h4.2"
+												stroke="currentColor"
+												stroke-width="1.35"
+												stroke-linecap="round"
+												stroke-linejoin="round"
+											></path>
+										</svg>
+										Gerar fatura PDF
+									</button>
+								</div>
+								<div
+									class="transaction-toolbar"
+									aria-label="Filtros e ordenação de lançamentos"
+								>
+									<input
+										id="transactionSearchInput"
+										type="search"
+										placeholder="Buscar nesta lista"
+										aria-label="Buscar lançamentos"
+									/>
+									<select
+										id="transactionPaymentFilter"
+										aria-label="Filtrar por meio de pagamento"
+									>
+										<option value="all">
+											Todos os meios
+										</option>
+										<option value="pix">Pix</option>
+										<option value="credit_card">
+											Cartão de crédito
+										</option>
+										<option value="debit_card">
+											Cartão de débito
+										</option>
+										<option value="voucher">Voucher</option>
+										<option value="cash">Dinheiro</option>
+										<option value="transfer">
+											Transferência
+										</option>
+										<option value="other">Outro</option>
+									</select>
+									<select
+										id="transactionSortInput"
+										aria-label="Ordenar lançamentos"
+									>
+										<option value="date_desc">
+											Mais recentes
+										</option>
+										<option value="date_asc">
+											Mais antigos
+										</option>
+										<option value="amount_desc">
+											Maior valor
+										</option>
+										<option value="amount_asc">
+											Menor valor
+										</option>
+										<option value="description">
+											Descrição
+										</option>
+									</select>
+									<button
+										class="filter-clear-btn"
+										id="transactionFilterClear"
+										type="button"
+									>
+										Limpar
+									</button>
+								</div>
+								<div class="table-wrap">
+									<table>
+										<thead>
+											<tr>
+												<th>Data</th>
+												<th>Descrição</th>
+												<th>Categoria</th>
+												<th>Banco</th>
+												<th>Valor</th>
+												<th>Ações</th>
+											</tr>
+										</thead>
+										<tbody id="transactionTable"></tbody>
+									</table>
+								</div>
+							</article>
+						</section>
 
-                        <section
-                            class="view-panel"
-                            id="planningView"
-                            aria-label="Planejamento mensal"
-                        >
-                            <div class="planning-layout">
-                                <article class="panel budget-panel">
-                                    <div class="panel-heading budget-heading">
-                                        <div>
-                                            <span class="eyebrow"
-                                                >Orçamento</span
-                                            >
-                                            <h2>Or&ccedil;amentos por categoria</h2>
-                                        </div>
-                                        <button class="btn-secondary compact" id="btnToggleBudgetForm" type="button">
-                                            + Adicionar limite
-                                        </button>
-                                    </div>
-                                    <form class="budget-form hidden" id="budgetForm">
-                                        <select
-                                            id="budgetCategoryInput"
-                                            aria-label="Categoria do orçamento"
-                                            required
-                                        ></select>
-                                        <input
-                                            id="budgetAmountInput"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            placeholder="Limite mensal"
-                                            aria-label="Limite mensal"
-                                            required
-                                        />
-                                        <button
-                                            class="btn-primary compact"
-                                            type="submit"
-                                        >
-                                            Salvar
-                                        </button>
-                                    </form>
-                                    <div
-                                        class="budget-list"
-                                        id="budgetList"
-                                    ></div>
-                                </article>
+						<section
+							class="view-panel"
+							id="planningView"
+							aria-label="Planejamento mensal"
+						>
+							<div class="planning-layout">
+								<article class="panel budget-panel">
+									<div class="panel-heading budget-heading">
+										<div>
+											<span class="eyebrow"
+												>Orçamento</span
+											>
+											<h2>
+												Or&ccedil;amentos por categoria
+											</h2>
+										</div>
+										<button
+											class="btn-secondary compact"
+											id="btnToggleBudgetForm"
+											type="button"
+										>
+											+ Adicionar limite
+										</button>
+									</div>
+									<form
+										class="budget-form hidden"
+										id="budgetForm"
+									>
+										<select
+											id="budgetCategoryInput"
+											aria-label="Categoria do orçamento"
+											required
+										></select>
+										<input
+											id="budgetAmountInput"
+											type="number"
+											min="1"
+											step="1"
+											placeholder="Limite mensal"
+											aria-label="Limite mensal"
+											required
+										/>
+										<button
+											class="btn-primary compact"
+											type="submit"
+										>
+											Salvar
+										</button>
+									</form>
+									<div
+										class="budget-list"
+										id="budgetList"
+									></div>
+								</article>
 
-                                <div class="planning-side">
-                                    <article class="panel planning-card">
-                                        <div class="panel-heading compact-heading">
-                                            <div>
-                                                <span class="eyebrow">An&aacute;lise</span>
-                                                <h2>Intelig&ecirc;ncia do m&ecirc;s</h2>
-                                            </div>
-                                        </div>
-                                        <div class="planning-insight-list" id="planningInsightList"></div>
-                                    </article>
+								<div class="planning-side">
+									<article class="panel planning-card">
+										<div
+											class="panel-heading compact-heading"
+										>
+											<div>
+												<span class="eyebrow"
+													>An&aacute;lise</span
+												>
+												<h2>
+													Intelig&ecirc;ncia do
+													m&ecirc;s
+												</h2>
+											</div>
+										</div>
+										<div
+											class="planning-insight-list"
+											id="planningInsightList"
+										></div>
+									</article>
 
-                                    <article class="panel planning-card">
-                                        <div class="panel-heading compact-heading">
-                                            <div>
-                                                <span class="eyebrow">Semanas</span>
-                                                <h2>Ritmo semanal</h2>
-                                            </div>
-                                        </div>
-                                        <div class="week-summary-list compact" id="weekSummaryList"></div>
-                                    </article>
+									<article class="panel planning-card">
+										<div
+											class="panel-heading compact-heading"
+										>
+											<div>
+												<span class="eyebrow"
+													>Semanas</span
+												>
+												<h2>Ritmo semanal</h2>
+											</div>
+										</div>
+										<div
+											class="week-summary-list compact"
+											id="weekSummaryList"
+										></div>
+									</article>
+								</div>
 
-                                </div>
+								<article class="panel hidden">
+									<div class="panel-heading">
+										<div>
+											<span class="eyebrow"
+												>Resumo por semana</span
+											>
+											<h2>Ritmo do mês</h2>
+										</div>
+									</div>
+									<div
+										class="week-summary-list"
+										id="legacyWeekSummaryList"
+									></div>
+								</article>
+							</div>
+						</section>
 
-                                <article class="panel hidden">
-                                    <div class="panel-heading">
-                                        <div>
-                                            <span class="eyebrow"
-                                                >Resumo por semana</span
-                                            >
-                                            <h2>Ritmo do mês</h2>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="week-summary-list"
-                                        id="legacyWeekSummaryList"
-                                    ></div>
-                                </article>
-                            </div>
-                        </section>
+						<section
+							class="view-panel"
+							id="goalsView"
+							aria-label="Metas financeiras"
+						>
+							<article class="panel goals-header-panel">
+								<header class="goals-page-intro">
+									<div>
+										<span class="eyebrow"
+											>Metas financeiras</span
+										>
+										<h2>Plano de metas</h2>
+									</div>
+									<button
+										class="btn-primary goals-new-button"
+										id="btnFocusGoalForm"
+										type="button"
+										title="Criar nova meta"
+									>
+										<i
+											data-lucide="plus"
+											aria-hidden="true"
+										></i>
+										Nova meta
+									</button>
+								</header>
+								<div
+									class="goals-progress-summary"
+									id="goalOverview"
+								></div>
+							</article>
 
-                        <section
-                            class="view-panel"
-                            id="goalsView"
-                            aria-label="Metas financeiras"
-                        >
-                            <article class="panel goals-header-panel">
-                                <header class="goals-page-intro">
-                                    <div>
-                                        <span class="eyebrow">Metas financeiras</span>
-                                        <h2>Plano de metas</h2>
-                                    </div>
-                                    <button class="btn-primary goals-new-button" id="btnFocusGoalForm" type="button" title="Criar nova meta">
-                                        <i data-lucide="plus" aria-hidden="true"></i>
-                                        Nova meta
-                                    </button>
-                                </header>
-                                <div class="goals-progress-summary" id="goalOverview"></div>
-                            </article>
+							<div class="goals-workspace">
+								<article
+									class="panel goal-builder"
+									id="goalBuilder"
+								>
+									<div
+										class="panel-heading goal-builder-heading"
+									>
+										<div>
+											<span class="eyebrow"
+												>Planejamento</span
+											>
+											<h2>Crie uma meta</h2>
+										</div>
+									</div>
 
-                            <div class="goals-workspace">
-                                <article class="panel goal-builder" id="goalBuilder">
-                                    <div class="panel-heading goal-builder-heading">
-                                        <div>
-                                            <span class="eyebrow">Planejamento</span>
-                                            <h2>Crie uma meta</h2>
-                                        </div>
-                                    </div>
+									<form class="goal-form" id="goalForm">
+										<fieldset
+											class="goal-category-field goal-field-wide"
+										>
+											<legend>Categoria</legend>
+											<input
+												id="goalCategoryInput"
+												type="hidden"
+											/>
+											<div
+												class="goal-category-list"
+												role="group"
+												aria-label="Categoria da meta"
+											>
+												<button
+													type="button"
+													data-goal-category="reserve"
+													aria-pressed="false"
+												>
+													<i
+														data-lucide="shield-check"
+														aria-hidden="true"
+													></i>
+													Reserva
+												</button>
+												<button
+													type="button"
+													data-goal-category="travel"
+													aria-pressed="false"
+												>
+													<i
+														data-lucide="plane"
+														aria-hidden="true"
+													></i>
+													Viagem
+												</button>
+												<button
+													type="button"
+													data-goal-category="project"
+													aria-pressed="false"
+												>
+													<i
+														data-lucide="rocket"
+														aria-hidden="true"
+													></i>
+													Projeto
+												</button>
+											</div>
+										</fieldset>
+										<label
+											class="goal-field goal-field-wide"
+										>
+											<span
+												>O que voc&ecirc; quer
+												realizar?</span
+											>
+											<input
+												id="goalNameInput"
+												type="text"
+												placeholder="Ex.: montar minha reserva"
+												aria-label="Nome da meta"
+												required
+											/>
+										</label>
+										<label class="goal-field">
+											<span>Valor da meta</span>
+											<input
+												id="goalTargetInput"
+												type="text"
+												inputmode="decimal"
+												placeholder="R$ 0,00"
+												aria-label="Valor desejado"
+												required
+											/>
+										</label>
+										<label class="goal-field">
+											<span>Valor inicial</span>
+											<input
+												id="goalSavedInput"
+												type="text"
+												inputmode="decimal"
+												placeholder="R$ 0,00"
+												aria-label="Valor j&aacute; guardado"
+												required
+											/>
+										</label>
+										<label
+											class="goal-field goal-field-wide"
+										>
+											<span
+												>Quando quer chegar
+												l&aacute;?</span
+											>
+											<input
+												id="goalDueInput"
+												type="date"
+												aria-label="Prazo da meta"
+											/>
+										</label>
 
-                                    <form class="goal-form" id="goalForm">
-                                        <fieldset class="goal-category-field goal-field-wide">
-                                            <legend>Categoria</legend>
-                                            <input id="goalCategoryInput" type="hidden">
-                                            <div class="goal-category-list" role="group" aria-label="Categoria da meta">
-                                                <button type="button" data-goal-category="reserve" aria-pressed="false">
-                                                    <i data-lucide="shield-check" aria-hidden="true"></i>
-                                                    Reserva
-                                                </button>
-                                                <button type="button" data-goal-category="travel" aria-pressed="false">
-                                                    <i data-lucide="plane" aria-hidden="true"></i>
-                                                    Viagem
-                                                </button>
-                                                <button type="button" data-goal-category="project" aria-pressed="false">
-                                                    <i data-lucide="rocket" aria-hidden="true"></i>
-                                                    Projeto
-                                                </button>
-                                            </div>
-                                        </fieldset>
-                                        <label class="goal-field goal-field-wide">
-                                            <span>O que voc&ecirc; quer realizar?</span>
-                                            <input id="goalNameInput" type="text" placeholder="Ex.: montar minha reserva" aria-label="Nome da meta" required>
-                                        </label>
-                                        <label class="goal-field">
-                                            <span>Valor da meta</span>
-                                            <input id="goalTargetInput" type="text" inputmode="decimal" placeholder="R$ 0,00" aria-label="Valor desejado" required>
-                                        </label>
-                                        <label class="goal-field">
-                                            <span>Valor inicial</span>
-                                            <input id="goalSavedInput" type="text" inputmode="decimal" placeholder="R$ 0,00" aria-label="Valor j&aacute; guardado" required>
-                                        </label>
-                                        <label class="goal-field goal-field-wide">
-                                            <span>Quando quer chegar l&aacute;?</span>
-                                            <input id="goalDueInput" type="date" aria-label="Prazo da meta">
-                                        </label>
+										<button
+											class="btn-primary goal-field-wide"
+											type="submit"
+											id="goalSubmitButton"
+										>
+											Criar meta
+										</button>
+									</form>
+								</article>
 
-                                        <button class="btn-primary goal-field-wide" type="submit" id="goalSubmitButton">Criar meta</button>
-                                    </form>
-                                </article>
+								<section
+									class="panel goals-collection"
+									aria-labelledby="goalsCollectionTitle"
+								>
+									<div class="goals-collection-heading">
+										<div>
+											<span class="eyebrow"
+												>Em movimento</span
+											>
+											<h2 id="goalsCollectionTitle">
+												Suas metas
+											</h2>
+										</div>
+										<span id="goalCountLabel">0 metas</span>
+									</div>
+									<div class="goal-list" id="goalList"></div>
+								</section>
+							</div>
+						</section>
 
-                                <section class="panel goals-collection" aria-labelledby="goalsCollectionTitle">
-                                    <div class="goals-collection-heading">
-                                        <div>
-                                            <span class="eyebrow">Em movimento</span>
-                                            <h2 id="goalsCollectionTitle">Suas metas</h2>
-                                        </div>
-                                        <span id="goalCountLabel">0 metas</span>
-                                    </div>
-                                    <div class="goal-list" id="goalList"></div>
-                                </section>
-                            </div>
-                        </section>
+						<section
+							class="view-panel"
+							id="categoriesView"
+							aria-label="Categorias de gastos"
+						>
+							<article class="panel">
+								<div class="panel-heading">
+									<div>
+										<span class="eyebrow">Categorias</span>
+										<h2>Gerenciar categorias</h2>
+									</div>
+								</div>
+								<form class="category-form" id="categoryForm">
+									<input id="categoryIdInput" type="hidden" />
+									<input
+										id="categoryIconInput"
+										type="hidden"
+										value="tag"
+									/>
+									<input
+										id="categoryNameInput"
+										type="text"
+										placeholder="Nome da categoria"
+										aria-label="Nome da categoria"
+										required
+									/>
+									<select
+										id="categoryTypeInput"
+										aria-label="Tipo da categoria"
+									>
+										<option value="expense">Saída</option>
+										<option value="income">Entrada</option>
+									</select>
+									<input
+										id="categoryColorInput"
+										type="hidden"
+										value="#16a34a"
+									/>
+									<div class="color-picker-field">
+										<button
+											class="color-picker-trigger"
+											id="categoryColorButton"
+											type="button"
+											aria-label="Escolher cor da categoria"
+											aria-expanded="false"
+										>
+											<span
+												class="color-picker-swatch"
+												id="categoryColorPreview"
+												aria-hidden="true"
+											></span>
+										</button>
+										<div
+											class="color-picker-popover hidden"
+											id="categoryColorPopover"
+											aria-label="Cores da categoria"
+										>
+											<div
+												class="color-picker-grid"
+												id="categoryColorPalette"
+											></div>
+											<label class="color-hex-field">
+												<span>Hex</span>
+												<input
+													id="categoryColorHexInput"
+													type="text"
+													inputmode="text"
+													maxlength="7"
+													spellcheck="false"
+													placeholder="#16a34a"
+												/>
+											</label>
+										</div>
+									</div>
+									<button
+										class="category-icon-trigger"
+										id="categoryIconButton"
+										type="button"
+										aria-label="Escolher icone da categoria"
+									>
+										<span
+											id="categoryIconButtonIcon"
+										></span>
+									</button>
+									<button
+										class="btn-primary compact"
+										id="categorySubmitButton"
+										type="submit"
+									>
+										Salvar categoria
+									</button>
+									<button
+										class="btn-secondary compact hidden"
+										id="categoryCancelButton"
+										type="button"
+									>
+										Cancelar
+									</button>
+									<div
+										class="category-icon-picker"
+										id="categoryIconPicker"
+										aria-label="Escolha um icone"
+									></div>
+								</form>
+								<div
+									class="category-icon-modal hidden"
+									id="categoryIconModal"
+									aria-hidden="true"
+								>
+									<div
+										class="category-icon-modal-panel"
+										role="dialog"
+										aria-modal="true"
+										aria-labelledby="categoryIconModalTitle"
+									>
+										<div class="category-icon-modal-head">
+											<div>
+												<span class="eyebrow"
+													>Categoria</span
+												>
+												<h3 id="categoryIconModalTitle">
+													Escolha um &iacute;cone
+												</h3>
+											</div>
+											<button
+												class="icon-button"
+												id="categoryIconModalClose"
+												type="button"
+												aria-label="Fechar seletor de icone"
+											>
+												<svg
+													width="15"
+													height="15"
+													viewBox="0 0 15 15"
+													fill="none"
+													aria-hidden="true"
+												>
+													<path
+														d="M11.5 3.5L3.5 11.5M3.5 3.5l8 8"
+														stroke="currentColor"
+														stroke-width="1.7"
+														stroke-linecap="round"
+													></path>
+												</svg>
+											</button>
+										</div>
+										<div
+											class="category-icon-picker modal-picker"
+											id="categoryIconModalPicker"
+											aria-label="Escolha um icone"
+										></div>
+									</div>
+								</div>
+								<div
+									class="category-board"
+									id="categoryBoard"
+								></div>
+							</article>
+						</section>
+					</section>
 
-                        <section
-                            class="view-panel"
-                            id="categoriesView"
-                            aria-label="Categorias de gastos"
-                        >
-                            <article class="panel">
-                                <div class="panel-heading">
-                                    <div>
-                                        <span class="eyebrow">Categorias</span>
-                                        <h2>Gerenciar categorias</h2>
-                                    </div>
-                                </div>
-                                <form class="category-form" id="categoryForm">
-                                    <input id="categoryIdInput" type="hidden" />
-                                    <input
-                                        id="categoryIconInput"
-                                        type="hidden"
-                                        value="tag"
-                                    />
-                                    <input
-                                        id="categoryNameInput"
-                                        type="text"
-                                        placeholder="Nome da categoria"
-                                        aria-label="Nome da categoria"
-                                        required
-                                    />
-                                    <select
-                                        id="categoryTypeInput"
-                                        aria-label="Tipo da categoria"
-                                    >
-                                        <option value="expense">Saída</option>
-                                        <option value="income">Entrada</option>
-                                    </select>
-                                    <input
-                                        id="categoryColorInput"
-                                        type="hidden"
-                                        value="#16a34a"
-                                    />
-                                    <div class="color-picker-field">
-                                        <button
-                                            class="color-picker-trigger"
-                                            id="categoryColorButton"
-                                            type="button"
-                                            aria-label="Escolher cor da categoria"
-                                            aria-expanded="false"
-                                        >
-                                            <span
-                                                class="color-picker-swatch"
-                                                id="categoryColorPreview"
-                                                aria-hidden="true"
-                                            ></span>
-                                        </button>
-                                        <div
-                                            class="color-picker-popover hidden"
-                                            id="categoryColorPopover"
-                                            aria-label="Cores da categoria"
-                                        >
-                                            <div
-                                                class="color-picker-grid"
-                                                id="categoryColorPalette"
-                                            ></div>
-                                            <label class="color-hex-field">
-                                                <span>Hex</span>
-                                                <input
-                                                    id="categoryColorHexInput"
-                                                    type="text"
-                                                    inputmode="text"
-                                                    maxlength="7"
-                                                    spellcheck="false"
-                                                    placeholder="#16a34a"
-                                                />
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <button
-                                        class="category-icon-trigger"
-                                        id="categoryIconButton"
-                                        type="button"
-                                        aria-label="Escolher icone da categoria"
-                                    >
-                                        <span id="categoryIconButtonIcon"></span>
-                                    </button>
-                                    <button
-                                        class="btn-primary compact"
-                                        id="categorySubmitButton"
-                                        type="submit"
-                                    >
-                                        Salvar categoria
-                                    </button>
-                                    <button
-                                        class="btn-secondary compact hidden"
-                                        id="categoryCancelButton"
-                                        type="button"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <div
-                                        class="category-icon-picker"
-                                        id="categoryIconPicker"
-                                        aria-label="Escolha um icone"
-                                    ></div>
-                                </form>
-                                <div
-                                    class="category-icon-modal hidden"
-                                    id="categoryIconModal"
-                                    aria-hidden="true"
-                                >
-                                    <div
-                                        class="category-icon-modal-panel"
-                                        role="dialog"
-                                        aria-modal="true"
-                                        aria-labelledby="categoryIconModalTitle"
-                                    >
-                                        <div class="category-icon-modal-head">
-                                            <div>
-                                                <span class="eyebrow">Categoria</span>
-                                                <h3 id="categoryIconModalTitle">
-                                                    Escolha um &iacute;cone
-                                                </h3>
-                                            </div>
-                                            <button
-                                                class="icon-button"
-                                                id="categoryIconModalClose"
-                                                type="button"
-                                                aria-label="Fechar seletor de icone"
-                                            >
-                                                <svg
-                                                    width="15"
-                                                    height="15"
-                                                    viewBox="0 0 15 15"
-                                                    fill="none"
-                                                    aria-hidden="true"
-                                                >
-                                                    <path
-                                                        d="M11.5 3.5L3.5 11.5M3.5 3.5l8 8"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.7"
-                                                        stroke-linecap="round"
-                                                    ></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div
-                                            class="category-icon-picker modal-picker"
-                                            id="categoryIconModalPicker"
-                                            aria-label="Escolha um icone"
-                                        ></div>
-                                    </div>
-                                </div>
-                                <div
-                                    class="category-board"
-                                    id="categoryBoard"
-                                ></div>
-                            </article>
-                        </section>
-                    </section>
+					<div
+						class="drawer-overlay hidden"
+						id="transactionDrawerOverlay"
+						aria-hidden="true"
+					></div>
 
-                    <div
-                        class="drawer-overlay hidden"
-                        id="transactionDrawerOverlay"
-                        aria-hidden="true"
-                    ></div>
+					<aside
+						class="right-panel"
+						id="transactionDrawer"
+						aria-label="Cadastro e resumo rápido"
+						aria-modal="true"
+					>
+						<form
+							class="entry-card"
+							id="transactionForm"
+							novalidate
+						>
+							<div class="panel-heading">
+								<div>
+									<span class="eyebrow">Lançamento</span>
+									<h2 id="formTitle">Nova movimentação</h2>
+								</div>
+								<button
+									class="icon-button"
+									type="button"
+									id="clearFormButton"
+									aria-label="Fechar lançamento"
+								>
+									<svg
+										width="15"
+										height="15"
+										viewBox="0 0 15 15"
+										fill="none"
+										aria-hidden="true"
+									>
+										<path
+											d="M11.5 3.5L3.5 11.5M3.5 3.5l8 8"
+											stroke="currentColor"
+											stroke-width="1.7"
+											stroke-linecap="round"
+										></path>
+									</svg>
+								</button>
+							</div>
 
-                    <aside
-                        class="right-panel"
-                        id="transactionDrawer"
-                        aria-label="Cadastro e resumo rápido"
-                        aria-modal="true"
-                    >
-                        <form
-                            class="entry-card"
-                            id="transactionForm"
-                            novalidate
-                        >
-                            <div class="panel-heading">
-                                <div>
-                                    <span class="eyebrow">Lançamento</span>
-                                    <h2 id="formTitle">Nova movimentação</h2>
-                                </div>
-                                <button
-                                    class="icon-button"
-                                    type="button"
-                                    id="clearFormButton"
-                                    aria-label="Fechar lançamento"
-                                >
-                                    <svg
-                                        width="15"
-                                        height="15"
-                                        viewBox="0 0 15 15"
-                                        fill="none"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M11.5 3.5L3.5 11.5M3.5 3.5l8 8"
-                                            stroke="currentColor"
-                                            stroke-width="1.7"
-                                            stroke-linecap="round"
-                                        ></path>
-                                    </svg>
-                                </button>
-                            </div>
+							<div
+								class="segmented-control"
+								role="group"
+								aria-label="Tipo de lançamento"
+							>
+								<button
+									class="segment active"
+									type="button"
+									data-type="income"
+								>
+									Entrada
+								</button>
+								<button
+									class="segment"
+									type="button"
+									data-type="expense"
+								>
+									Saída
+								</button>
+							</div>
 
-                            <div
-                                class="segmented-control"
-                                role="group"
-                                aria-label="Tipo de lançamento"
-                            >
-                                <button
-                                    class="segment active"
-                                    type="button"
-                                    data-type="income"
-                                >
-                                    Entrada
-                                </button>
-                                <button
-                                    class="segment"
-                                    type="button"
-                                    data-type="expense"
-                                >
-                                    Saída
-                                </button>
-                            </div>
+							<input id="transactionIdInput" type="hidden" />
+							<div class="form-stack">
+								<label class="form-group">
+									<span>Descrição</span>
+									<input
+										id="descriptionInput"
+										type="text"
+										placeholder="Ex.: bolsa, aluguel, livro"
+										autocomplete="off"
+										required
+									/>
+								</label>
+								<div class="form-row">
+									<label class="form-group">
+										<span>Valor</span>
+										<input
+											id="amountInput"
+											type="text"
+											inputmode="decimal"
+											placeholder="0,00"
+											required
+										/>
+									</label>
+									<label class="form-group">
+										<span>Data</span>
+										<input
+											id="dateInput"
+											type="date"
+											required
+										/>
+									</label>
+								</div>
+								<label class="form-group">
+									<span>Categoria</span>
+									<select id="categoryInput"></select>
+								</label>
+								<div class="form-group">
+									<span id="accountInputLabel">Banco</span>
+									<div class="account-control-row">
+										<select
+											id="accountInput"
+											aria-labelledby="accountInputLabel"
+										></select>
+										<button
+											class="account-delete-button hidden"
+											id="btnDeleteAccount"
+											type="button"
+											aria-label="Excluir banco selecionado"
+											title="Excluir banco selecionado"
+										>
+											<i
+												data-lucide="trash-2"
+												aria-hidden="true"
+											></i>
+										</button>
+									</div>
+									<input
+										class="hidden"
+										id="customAccountInput"
+										type="text"
+										placeholder="Nome do novo banco"
+										autocomplete="off"
+										aria-label="Nome do novo banco"
+									/>
+								</div>
+								<div class="form-row" id="paymentFields">
+									<label class="form-group">
+										<span>Meio de pagamento</span>
+										<select id="paymentMethodInput">
+											<option value="other">Outro</option>
+											<option value="pix">Pix</option>
+											<option value="credit_card">
+												Cartão de crédito
+											</option>
+											<option value="debit_card">
+												Cartão de débito
+											</option>
+											<option value="voucher">
+												Voucher
+											</option>
+											<option value="cash">
+												Dinheiro
+											</option>
+											<option value="transfer">
+												Transferência
+											</option>
+										</select>
+									</label>
+									<label
+										class="form-group hidden"
+										id="cardInputGroup"
+									>
+										<span>Cartão</span>
+										<div class="account-control-row">
+											<select id="cardInput"></select>
+											<button
+												class="account-delete-button hidden"
+												id="btnDeleteCard"
+												type="button"
+												aria-label="Excluir cartão selecionado"
+												title="Excluir cartão selecionado"
+											>
+												<i
+													data-lucide="trash-2"
+													aria-hidden="true"
+												></i>
+											</button>
+										</div>
+									</label>
+								</div>
+								<input
+									class="hidden"
+									id="customCardInput"
+									type="text"
+									placeholder="Nome do novo cartão"
+									autocomplete="off"
+								/>
+								<label class="form-group">
+									<span>Observação</span>
+									<textarea
+										id="notesInput"
+										rows="3"
+										placeholder="Detalhes úteis para lembrar depois"
+									></textarea>
+								</label>
+								<label class="checkbox-row">
+									<input
+										id="recurringInput"
+										type="checkbox"
+									/>
+									<span>Marcar como recorrente</span>
+								</label>
+								<label class="checkbox-row">
+									<input
+										id="installmentInput"
+										type="checkbox"
+									/>
+									<span>Parcelar este lançamento</span>
+								</label>
+								<label
+									class="form-group hidden"
+									id="installmentCountGroup"
+								>
+									<span>Quantidade de parcelas</span>
+									<input
+										id="installmentCountInput"
+										type="number"
+										min="2"
+										max="120"
+										value="2"
+										inputmode="numeric"
+									/>
+								</label>
+							</div>
 
-                            <input id="transactionIdInput" type="hidden" />
-                            <div class="form-stack">
-                                <label class="form-group">
-                                    <span>Descrição</span>
-                                    <input
-                                        id="descriptionInput"
-                                        type="text"
-                                        placeholder="Ex.: bolsa, aluguel, livro"
-                                        autocomplete="off"
-                                        required
-                                    />
-                                </label>
-                                <div class="form-row">
-                                    <label class="form-group">
-                                        <span>Valor</span>
-                                        <input
-                                            id="amountInput"
-                                            type="text"
-                                            inputmode="decimal"
-                                            placeholder="0,00"
-                                            required
-                                        />
-                                    </label>
-                                    <label class="form-group">
-                                        <span>Data</span>
-                                        <input
-                                            id="dateInput"
-                                            type="date"
-                                            required
-                                        />
-                                    </label>
-                                </div>
-                                <label class="form-group">
-                                    <span>Categoria</span>
-                                    <select id="categoryInput"></select>
-                                </label>
-                                <div class="form-group">
-                                    <span id="accountInputLabel">Banco</span>
-                                    <div class="account-control-row">
-                                        <select id="accountInput" aria-labelledby="accountInputLabel"></select>
-                                        <button
-                                            class="account-delete-button hidden"
-                                            id="btnDeleteAccount"
-                                            type="button"
-                                            aria-label="Excluir banco selecionado"
-                                            title="Excluir banco selecionado"
-                                        >
-                                            <i data-lucide="trash-2" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <input
-                                        class="hidden"
-                                        id="customAccountInput"
-                                        type="text"
-                                        placeholder="Nome do novo banco"
-                                        autocomplete="off"
-                                        aria-label="Nome do novo banco"
-                                    />
-                                </div>
-                                <div class="form-row" id="paymentFields">
-                                    <label class="form-group">
-                                        <span>Meio de pagamento</span>
-                                        <select id="paymentMethodInput">
-                                            <option value="other">Outro</option>
-                                            <option value="pix">Pix</option>
-                                            <option value="credit_card">Cartão de crédito</option>
-                                            <option value="debit_card">Cartão de débito</option>
-                                            <option value="voucher">Voucher</option>
-                                            <option value="cash">Dinheiro</option>
-                                            <option value="transfer">Transferência</option>
-                                        </select>
-                                    </label>
-                                    <label class="form-group hidden" id="cardInputGroup">
-                                        <span>Cartão</span>
-                                        <div class="account-control-row">
-                                            <select id="cardInput"></select>
-                                            <button class="account-delete-button hidden" id="btnDeleteCard" type="button" aria-label="Excluir cartão selecionado" title="Excluir cartão selecionado">
-                                                <i data-lucide="trash-2" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                    </label>
-                                </div>
-                                <input class="hidden" id="customCardInput" type="text" placeholder="Nome do novo cartão" autocomplete="off" />
-                                <label class="form-group">
-                                    <span>Observação</span>
-                                    <textarea
-                                        id="notesInput"
-                                        rows="3"
-                                        placeholder="Detalhes úteis para lembrar depois"
-                                    ></textarea>
-                                </label>
-                                <label class="checkbox-row">
-                                    <input
-                                        id="recurringInput"
-                                        type="checkbox"
-                                    />
-                                    <span>Marcar como recorrente</span>
-                                </label>
-                                <label class="checkbox-row">
-                                    <input id="installmentInput" type="checkbox" />
-                                    <span>Parcelar este lançamento</span>
-                                </label>
-                                <label class="form-group hidden" id="installmentCountGroup">
-                                    <span>Quantidade de parcelas</span>
-                                    <input id="installmentCountInput" type="number" min="2" max="120" value="2" inputmode="numeric" />
-                                </label>
-                            </div>
+							<div class="form-actions">
+								<button
+									class="btn-secondary hidden"
+									id="btnDeleteTransaction"
+									type="button"
+								>
+									Excluir
+								</button>
+								<button
+									class="btn-primary"
+									id="submitButton"
+									type="submit"
+								>
+									Salvar
+								</button>
+							</div>
+						</form>
+					</aside>
+				</div>
+			</main>
+		</div>
 
-                            <div class="form-actions">
-                                <button
-                                    class="btn-secondary hidden"
-                                    id="btnDeleteTransaction"
-                                    type="button"
-                                >
-                                    Excluir
-                                </button>
-                                <button
-                                    class="btn-primary"
-                                    id="submitButton"
-                                    type="submit"
-                                >
-                                    Salvar
-                                </button>
-                            </div>
-                        </form>
-                    </aside>
-                </div>
-            </main>
-        </div>
+		<button
+			class="fab"
+			id="fabBtn"
+			type="button"
+			aria-label="Novo lançamento"
+		>
+			<svg
+				width="22"
+				height="22"
+				viewBox="0 0 22 22"
+				fill="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M11 3v16M3 11h16"
+					stroke="white"
+					stroke-width="2.2"
+					stroke-linecap="round"
+				></path>
+			</svg>
+		</button>
 
-        <button
-            class="fab"
-            id="fabBtn"
-            type="button"
-            aria-label="Novo lançamento"
-        >
-            <svg
-                width="22"
-                height="22"
-                viewBox="0 0 22 22"
-                fill="none"
-                aria-hidden="true"
-            >
-                <path
-                    d="M11 3v16M3 11h16"
-                    stroke="white"
-                    stroke-width="2.2"
-                    stroke-linecap="round"
-                ></path>
-            </svg>
-        </button>
+		<div
+			class="toast-container"
+			id="toastContainer"
+			aria-live="polite"
+			aria-atomic="true"
+		></div>
 
-        <div
-            class="toast-container"
-            id="toastContainer"
-            aria-live="polite"
-            aria-atomic="true"
-        ></div>
+		<div
+			class="import-overlay hidden"
+			id="importOverlay"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="importTitle"
+			aria-hidden="true"
+			inert
+		>
+			<div class="import-modal" id="importModal">
+				<div class="import-head">
+					<div>
+						<span class="eyebrow">Arquivo</span>
+						<h2 id="importTitle">Importar dados</h2>
+					</div>
+					<button
+						class="icon-button"
+						id="importClose"
+						type="button"
+						aria-label="Fechar importa&ccedil;&atilde;o"
+						title="Fechar"
+					>
+						<i data-lucide="x" aria-hidden="true"></i>
+					</button>
+				</div>
+				<div class="import-body" id="importBody"></div>
+				<div class="import-actions hidden" id="importActions">
+					<button class="btn-secondary" id="importBack" type="button">
+						Voltar
+					</button>
+					<button
+						class="btn-primary"
+						id="importConfirm"
+						type="button"
+					>
+						Importar
+					</button>
+				</div>
+			</div>
+		</div>
 
-        <div
-            class="import-overlay hidden"
-            id="importOverlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="importTitle"
-            aria-hidden="true"
-            inert
-        >
-            <div class="import-modal" id="importModal">
-                <div class="import-head">
-                    <div>
-                        <span class="eyebrow">Arquivo</span>
-                        <h2 id="importTitle">Importar dados</h2>
-                    </div>
-                    <button class="icon-button" id="importClose" type="button" aria-label="Fechar importa&ccedil;&atilde;o" title="Fechar">
-                        <i data-lucide="x" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <div class="import-body" id="importBody"></div>
-                <div class="import-actions hidden" id="importActions">
-                    <button class="btn-secondary" id="importBack" type="button">Voltar</button>
-                    <button class="btn-primary" id="importConfirm" type="button">Importar</button>
-                </div>
-            </div>
-        </div>
+		<div
+			class="goal-history-overlay hidden"
+			id="goalHistoryOverlay"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="goalHistoryTitle"
+			aria-hidden="true"
+			inert
+		>
+			<div class="goal-history-modal">
+				<div class="goal-history-head">
+					<div>
+						<span class="eyebrow">Aportes</span>
+						<h2 id="goalHistoryTitle">Hist&oacute;rico da meta</h2>
+					</div>
+					<button
+						class="icon-button"
+						id="goalHistoryClose"
+						type="button"
+						aria-label="Fechar hist&oacute;rico"
+						title="Fechar"
+					>
+						<i data-lucide="x" aria-hidden="true"></i>
+					</button>
+				</div>
+				<div class="goal-history-summary" id="goalHistorySummary"></div>
+				<div class="goal-history-list" id="goalHistoryList"></div>
+			</div>
+		</div>
 
-        <div
-            class="goal-history-overlay hidden"
-            id="goalHistoryOverlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="goalHistoryTitle"
-            aria-hidden="true"
-            inert
-        >
-            <div class="goal-history-modal">
-                <div class="goal-history-head">
-                    <div>
-                        <span class="eyebrow">Aportes</span>
-                        <h2 id="goalHistoryTitle">Hist&oacute;rico da meta</h2>
-                    </div>
-                    <button
-                        class="icon-button"
-                        id="goalHistoryClose"
-                        type="button"
-                        aria-label="Fechar hist&oacute;rico"
-                        title="Fechar"
-                    >
-                        <i data-lucide="x" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <div class="goal-history-summary" id="goalHistorySummary"></div>
-                <div class="goal-history-list" id="goalHistoryList"></div>
-            </div>
-        </div>
+		<div
+			class="confirm-overlay hidden"
+			id="confirmOverlay"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="confirmTitle"
+			aria-hidden="true"
+		>
+			<div class="confirm-modal">
+				<div class="confirm-icon" id="confirmIcon" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+						<path
+							d="M3 6h18M8 6V4.75A1.75 1.75 0 0 1 9.75 3h4.5A1.75 1.75 0 0 1 16 4.75V6M10 11v6M14 11v6M5.5 6l1 14h11l1-14"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						></path>
+					</svg>
+				</div>
+				<div class="confirm-content">
+					<h2 class="confirm-title" id="confirmTitle">
+						Confirmar exclusão?
+					</h2>
+					<p class="confirm-text" id="confirmText">
+						Essa ação não pode ser desfeita.
+					</p>
+				</div>
+				<div class="confirm-actions">
+					<button
+						class="btn-secondary"
+						id="confirmCancel"
+						type="button"
+					>
+						Cancelar
+					</button>
+					<button class="btn-danger" id="confirmDelete" type="button">
+						Excluir
+					</button>
+				</div>
+			</div>
+		</div>
 
-        <div
-            class="confirm-overlay hidden"
-            id="confirmOverlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirmTitle"
-            aria-hidden="true"
-        >
-            <div class="confirm-modal">
-                <div class="confirm-icon" id="confirmIcon" aria-hidden="true">
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                    >
-                        <path
-                            d="M3 6h18M8 6V4.75A1.75 1.75 0 0 1 9.75 3h4.5A1.75 1.75 0 0 1 16 4.75V6M10 11v6M14 11v6M5.5 6l1 14h11l1-14"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        ></path>
-                    </svg>
-                </div>
-                <div class="confirm-content">
-                    <h2 class="confirm-title" id="confirmTitle">
-                        Confirmar exclusão?
-                    </h2>
-                    <p class="confirm-text" id="confirmText">
-                        Essa ação não pode ser desfeita.
-                    </p>
-                </div>
-                <div class="confirm-actions">
-                    <button
-                        class="btn-secondary"
-                        id="confirmCancel"
-                        type="button"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        class="btn-danger"
-                        id="confirmDelete"
-                        type="button"
-                    >
-                        Excluir
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-        <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" defer></script>
-        <script src="src/scripts/pdf-parser.js" defer></script>
-        <script src="src/scripts/account-utils.js" defer></script>
-        <script src="src/scripts/date-utils.js" defer></script>
-        <script
-            src="https://cdn.jsdelivr.net/npm/lucide@1.23.0/dist/umd/lucide.min.js"
-            defer
-        ></script>
-        <script src="src/scripts/app.js" defer></script>
-        <script src="src/scripts/pwa.js" defer></script>
-    </body>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+		<script
+			src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"
+			defer
+		></script>
+		<script src="src/scripts/pdf-parser.js" defer></script>
+		<script src="src/scripts/account-utils.js" defer></script>
+		<script src="src/scripts/date-utils.js" defer></script>
+		<script
+			src="https://cdn.jsdelivr.net/npm/lucide@1.23.0/dist/umd/lucide.min.js"
+			defer
+		></script>
+		<script src="src/scripts/app.js" defer></script>
+		<script src="src/scripts/pwa.js" defer></script>
+	</body>
 </html>

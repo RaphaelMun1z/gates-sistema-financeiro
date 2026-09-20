@@ -9,6 +9,7 @@ const { readFinanceState, replaceFinanceState } = require("./src/database/financ
 const auth = require("./src/services/auth-service");
 
 const attempts = new Map();
+const saveQueues = new Map();
 let lastBackup = 0;
 const contentTypes = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon" };
 const PUBLIC_PATHS = new Set(["/", "/index.html"]);
@@ -22,6 +23,13 @@ async function readJson(request) { let size = 0; let body = ""; for await (const
 function rateKey(request, email) { return `${request.socket.remoteAddress || "unknown"}:${email}`; }
 function blocked(key) { const item = attempts.get(key); if (!item) return false; if (item.resetAt <= Date.now()) { attempts.delete(key); return false; } return item.count >= 5; }
 function failed(key) { const item = attempts.get(key) || { count: 0, resetAt: Date.now() + 15 * 60 * 1000 }; item.count += 1; attempts.set(key, item); }
+function enqueueSave(userId, operation) {
+  const previous = saveQueues.get(userId) || Promise.resolve();
+  const current = previous.catch(() => undefined).then(operation);
+  saveQueues.set(userId, current);
+  current.finally(() => { if (saveQueues.get(userId) === current) saveQueues.delete(userId); }).catch(() => undefined);
+  return current;
+}
 
 async function authApi(request, response, url) {
   if (request.method === "GET" && url.pathname === "/api/auth/me") { const user = await auth.findSession(cookieValue(request, "gates_session")); return json(response, user ? 200 : 401, user ? { user } : { error: "Não autenticado" }); }
@@ -47,7 +55,7 @@ async function backupDatabase() {
 async function dataApi(request, response, url) {
   const user = await auth.findSession(cookieValue(request, "gates_session")); if (!user) return json(response, 401, { error: "Sessão expirada." });
   if (request.method === "GET" && url.pathname === "/api/data") return json(response, 200, await readFinanceState(user.id));
-  if (request.method === "PUT" && url.pathname === "/api/data") { await replaceFinanceState(user.id, await readJson(request)); await backupDatabase(); return json(response, 200, { ok: true }); }
+  if (request.method === "PUT" && url.pathname === "/api/data") { const state = await readJson(request); await enqueueSave(user.id, async () => { await replaceFinanceState(user.id, state); await backupDatabase(); }); return json(response, 200, { ok: true }); }
   return false;
 }
 function publicPathname(pathname) { let decoded; try { decoded = decodeURIComponent(pathname); } catch { return null; } if (!decoded.startsWith("/") || decoded.includes("\0")) return null; const normalized = path.posix.normalize(decoded); if (normalized === ".." || normalized.startsWith("../")) return null; return PUBLIC_PATHS.has(normalized) || PUBLIC_PREFIXES.some((prefix) => normalized.startsWith(prefix)) ? normalized : null; }
