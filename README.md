@@ -1,6 +1,6 @@
 # Gates - Financas
 
-Sistema financeiro pessoal com autenticacao, SQLite local e dados separados por usuario.
+Sistema financeiro pessoal com autenticação, MongoDB e dados separados por usuário.
 
 ## Como rodar
 
@@ -19,14 +19,40 @@ Copy-Item .env.example .env
 npm start
 ```
 
+Configure antes o MongoDB no `.env`:
+
+```dotenv
+MONGODB_ROOT_USERNAME=seu-usuario-administrador
+MONGODB_ROOT_PASSWORD=sua-senha-segura
+MONGODB_URI=mongodb://seu-usuario-administrador:sua-senha-segura@127.0.0.1:27017/?authSource=admin
+MONGODB_DATABASE=gates_financeiro
+```
+
+Para iniciar o MongoDB local com Docker:
+
+```bash
+docker compose up -d mongodb
+docker compose ps
+```
+
 Para acesso pela internet, publique este servidor atras de HTTPS e use `HOST=0.0.0.0`.
 
 Tambem e possivel abrir `index.html` diretamente, mas o servidor local evita problemas com bibliotecas carregadas pelo navegador.
 
+## Migração do SQLite
+
+O SQLite atual não é apagado. Com o MongoDB configurado, execute uma vez:
+
+```bash
+npm run migrate:sqlite-to-mongodb
+```
+
+O processo copia usuários, senhas com hash, lançamentos, categorias, bancos, cartões, orçamentos e metas. Mantenha `data/gates.sqlite` como backup até conferir a nova base.
+
 ## Persistencia
 
-- O estado completo fica em `data/gates.sqlite`, separado por usuario e dividido em tabelas relacionais.
-- A persistencia usa TypeORM com SQLite; entidades, datasource e repositorios ficam em `src/database/`.
+- O estado de cada usuário fica em um documento MongoDB, com revisão otimista para impedir sobrescritas entre abas ou sessões.
+- A API é fornecida por Node.js + Express e o driver oficial do MongoDB.
 - O frontend nao usa `localStorage`; toda leitura e escrita passa pela API autenticada.
 - Senhas sao armazenadas apenas como hash bcrypt.
 - O arquivo `.env` contém apenas a configuração de inicialização; o `server.js` não contém suas credenciais.

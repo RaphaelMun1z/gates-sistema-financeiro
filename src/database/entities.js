@@ -12,7 +12,7 @@ const ResetToken = new EntitySchema({ name: "ResetToken", tableName: "reset_toke
   tokenHash: { type: String, primary: true, name: "token_hash" }, userId: { type: Number, name: "user_id" }, expiresAt: { type: String, name: "expires_at" }, used: { type: Boolean, default: false }
 } });
 const Preference = new EntitySchema({ name: "Preference", tableName: "preferences", columns: {
-  userId: { type: Number, primary: true, name: "user_id" }, selectedDate: { type: String, name: "selected_date" }, period: { type: String }, currentView: { type: String, name: "current_view" }, theme: { type: String }, categoryChartType: { type: String, name: "category_chart_type" }
+  userId: { type: Number, primary: true, name: "user_id" }, selectedDate: { type: String, name: "selected_date" }, period: { type: String }, currentView: { type: String, name: "current_view" }, theme: { type: String }, categoryChartType: { type: String, name: "category_chart_type" }, revision: { type: Number, default: 0 }
 } });
 const Category = new EntitySchema({ name: "Category", tableName: "categories", columns: {
   id: { type: String, primary: true }, userId: { type: Number, name: "user_id" }, type: { type: String }, label: { type: String }, color: { type: String }, icon: { type: String }

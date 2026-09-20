@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "gates-pwa-v1";
+const CACHE_NAME = "gates-pwa-v2";
 const APP_SHELL = [
   "./", "./index.html", "./manifest.json",
   "./assets/favicon.svg", "./assets/icon-192.svg", "./assets/icon-512.svg",
@@ -32,6 +32,10 @@ self.addEventListener("fetch", (event) => {
   const externalAsset = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname);
   if (!sameOrigin && !externalAsset) return;
 
+  // Dados autenticados e chamadas de API nunca podem entrar no cache do PWA.
+  // O estado financeiro precisa sempre vir do servidor.
+  if (sameOrigin && url.pathname.startsWith("/api/")) return;
+
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
@@ -44,13 +48,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(caches.match(event.request).then((cached) => {
-    if (cached) return cached;
-    return fetch(event.request).then((response) => {
-      if (response.ok || response.type === "opaque") {
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
-      }
-      return response;
-    });
-  }));
+  // Recursos da interface usam rede primeiro: alterações no app.js e no CSS
+  // chegam ao usuário sem depender de uma limpeza manual do cache. O cache é
+  // mantido apenas como alternativa para uso offline.
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok || response.type === "opaque") {
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
+  );
 });

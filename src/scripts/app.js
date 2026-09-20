@@ -300,6 +300,7 @@ const app = {
 	pdfImportInProgress: false,
 	importConfirming: false,
 	ocrScriptPromise: null,
+	serverRevision: 0,
 	toastQueue: [],
 	toastVisible: false,
 	pendingConfirmAction: null,
@@ -734,6 +735,7 @@ async function loadData() {
 	if (!response.ok) throw new Error("Não foi possível carregar seus dados.");
 	const persisted = await response.json();
 	if (persisted) {
+		app.serverRevision = Number(persisted.revision || 0);
 		app.state = normalizeState(persisted);
 		return;
 	}
@@ -777,25 +779,34 @@ function normalizeCard(item) {
 }
 
 function saveState({ strict = false } = {}) {
-	const payload = {
+	// O salvamento é enfileirado. Por isso, o payload precisa ser um snapshot
+	// imutável do estado neste instante, e não referências aos arrays de app.state
+	// que podem ser alterados antes da requisição começar.
+	const snapshot = JSON.parse(JSON.stringify({
 		version: 1,
 		updatedAt: new Date().toISOString(),
 		...app.state,
-	};
+	}));
 	try {
 		if (window.location.protocol !== "file:") {
 			const request = saveQueue
-				.then(() =>
-					fetch("/api/data", {
+				.then(() => {
+					const payload = { ...snapshot, revision: app.serverRevision };
+					return fetch("/api/data", {
 						method: "PUT",
 						credentials: "same-origin",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(payload),
-					}),
-				)
-				.then((response) => {
+					});
+				})
+				.then(async (response) => {
+					if (response.status === 409) throw new Error("CONFLICT");
 					if (!response.ok)
 						throw new Error("Falha ao salvar no servidor.");
+					const result = await response.json();
+					app.serverRevision = Number(
+						result.revision || app.serverRevision,
+					);
 					return { local: false };
 				})
 				.catch((error) => {

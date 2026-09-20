@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "node server.js",
-    "check": "node --check src/scripts/app.js && node --check src/scripts/account-utils.js && node --check src/scripts/date-utils.js && node --check src/scripts/pdf-parser.js && node --check src/scripts/pwa.js && node --check service-worker.js && node --check server.js && node --check src/server/config.js && node --check src/database/entities.js && node --check src/database/data-source.js && node --check src/database/finance-repository.js && node --check src/services/auth-service.js",
+    "check": "node --check src/scripts/app.js && node --check src/scripts/account-utils.js && node --check src/scripts/date-utils.js && node --check src/scripts/pdf-parser.js && node --check src/scripts/pwa.js && node --check service-worker.js && node --check server.js && node --check src/server/config.js && node --check src/database/mongo.js && node --check src/database/finance-repository.js && node --check src/services/auth-service.js && node --check src/scripts/migrate-sqlite-to-mongodb.js",
+    "migrate:sqlite-to-mongodb": "node src/scripts/migrate-sqlite-to-mongodb.js",
     "validate": "npm run check && npm test",
     "test": "node --test test/*.test.js",
     "pages:dev": "wrangler pages dev ."
@@ -12,6 +13,8 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
+    "express": "^5.2.1",
+    "mongodb": "^7.6.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^1.1.1"
   }

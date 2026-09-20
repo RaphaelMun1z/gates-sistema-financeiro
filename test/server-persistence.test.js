@@ -20,11 +20,11 @@ function waitForServer(child) {
   });
 }
 
-test("servidor local entrega o app estático sem API de usuário", async (context) => {
+(process.env.MONGODB_TEST_URI ? test : test.skip)("servidor local entrega o app estático sem API de usuário", async (context) => {
   const port = 43000 + Math.floor(Math.random() * 1000);
   const child = spawn(process.execPath, [path.join(__dirname, "..", "server.js")], {
     cwd: path.join(__dirname, ".."),
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env, PORT: String(port), MONGODB_URI: process.env.MONGODB_TEST_URI },
     stdio: ["ignore", "pipe", "pipe"]
   });
   context.after(() => child.kill());

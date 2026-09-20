@@ -22,6 +22,8 @@ module.exports = {
   host: process.env.HOST || "127.0.0.1",
   port: Number(process.env.PORT || 4173),
   databasePath: process.env.DATABASE_PATH || path.join(root, "data", "gates.sqlite"),
+  mongodbUri: String(process.env.MONGODB_URI || "").trim(),
+  mongodbDatabase: String(process.env.MONGODB_DATABASE || "").trim(),
   backupDir: path.join(root, "data", "backups"),
   nodeEnv: process.env.NODE_ENV || "development",
   adminEmail: String(process.env.ADMIN_EMAIL || "").trim().toLowerCase(),
