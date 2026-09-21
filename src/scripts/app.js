@@ -363,6 +363,14 @@ function addMonths(date, amount) {
 	);
 }
 
+function recurringNextDate(item) {
+	const current = fromISO(item.date);
+	const targetMonth = current.getMonth() + 1;
+	const anchorDay = Math.min(31, Math.max(1, Number(item.recurringDay || current.getDate())));
+	const lastDay = new Date(current.getFullYear(), targetMonth + 1, 0).getDate();
+	return toISO(new Date(current.getFullYear(), targetMonth, Math.min(anchorDay, lastDay)));
+}
+
 function weekStart(date) {
 	const day = date.getDay();
 	const diff = day === 0 ? -6 : 1 - day;
@@ -637,6 +645,53 @@ function normalizeState(raw) {
 	};
 }
 
+function ensureRecurringTransactions() {
+	const recurring = app.state.transactions.filter(
+		(item) => item.recurring && Number(item.installmentTotal) <= 1,
+	);
+	if (!recurring.length) return false;
+
+	let changed = false;
+	const series = new Map();
+	recurring.forEach((item) => {
+		if (!item.recurringSeriesId) {
+			item.recurringSeriesId = item.id;
+			changed = true;
+		}
+		if (!item.recurringDay) {
+			item.recurringDay = fromISO(item.date).getDate();
+			changed = true;
+		}
+		const entries = series.get(item.recurringSeriesId) || [];
+		entries.push(item);
+		series.set(item.recurringSeriesId, entries);
+	});
+
+	series.forEach((entries, seriesId) => {
+		const ordered = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+		const latest = ordered[ordered.length - 1];
+		if (latest.recurringGenerated && latest.date > toISO(new Date())) return;
+
+		const nextDate = recurringNextDate(latest);
+		if (entries.some((item) => item.date === nextDate)) return;
+
+		const next = normalizeTransaction({
+			...latest,
+			id: uid("transaction"),
+			date: nextDate,
+			recurring: true,
+			recurringSeriesId: seriesId,
+			recurringDay: latest.recurringDay,
+			recurringGenerated: true,
+		});
+		if (!next) return;
+		app.state.transactions.push(next);
+		changed = true;
+	});
+
+	return changed;
+}
+
 function normalizeCategories(source) {
 	if (!source || typeof source !== "object") return cloneCategories();
 	const normalizeGroup = (items, fallbackType) => {
@@ -721,6 +776,9 @@ function normalizeTransaction(
 		installmentNumber: Math.max(1, Number(item.installmentNumber || 1)),
 		installmentTotal: Math.max(1, Number(item.installmentTotal || 1)),
 		recurring: Boolean(item.recurring),
+		recurringSeriesId: String(item.recurringSeriesId || "").trim(),
+		recurringDay: Math.min(31, Math.max(1, Number(item.recurringDay || 0))),
+		recurringGenerated: Boolean(item.recurringGenerated),
 		notes: String(item.notes || "").trim(),
 	};
 }
@@ -1107,8 +1165,19 @@ function sortTransactions(a, b) {
 	return a.description.localeCompare(b.description, "pt-BR");
 }
 
-function isEffectiveTransaction(item) {
-	return item.date <= toISO(new Date());
+function periodCalculationCutoff() {
+	const today = toISO(new Date());
+	if (app.state.period === "all") return today;
+	const range = periodRange();
+	const start = toISO(range.start);
+	const end = toISO(range.end);
+	if (start > today) return end;
+	if (end < today) return end;
+	return today;
+}
+
+function isEffectiveForPeriod(item) {
+	return item.date <= periodCalculationCutoff();
 }
 
 function balanceImpact(item) {
@@ -1116,12 +1185,12 @@ function balanceImpact(item) {
 	return item.paymentMethod === "credit_card" ? 0 : -Number(item.amount);
 }
 
-function totalsFor(items) {
+function totalsFor(items, cutoff = periodCalculationCutoff()) {
 	return items.reduce(
 		(acc, item) => {
 			// Future-dated entries remain visible, but only affect financial
 			// balances and credit usage once their date is reached.
-			if (!isEffectiveTransaction(item)) return acc;
+			if (item.date > cutoff) return acc;
 			acc[item.type] += Number(item.amount);
 			if (item.type === "expense" && item.paymentMethod === "credit_card")
 				acc.creditExpense += Number(item.amount);
@@ -1137,7 +1206,7 @@ function openingBalanceForPeriod(matches = () => true) {
 	if (app.state.period === "all") return 0;
 	const start = toISO(periodRange().start);
 	return app.state.transactions
-		.filter((item) => item.date < start && isEffectiveTransaction(item) && matches(item))
+		.filter((item) => item.date < start && isEffectiveForPeriod(item) && matches(item))
 		.reduce((sum, item) => sum + balanceImpact(item), 0);
 }
 
@@ -2256,7 +2325,7 @@ function bankBreakdown(displayTransactions = app.state.transactions) {
 		const creditUsed = periodBankTransactions
 			.filter(
 				(item) =>
-					isEffectiveTransaction(item) &&
+					isEffectiveForPeriod(item) &&
 					item.type === "expense" &&
 					item.paymentMethod === "credit_card" &&
 					creditCardIds.has(item.cardId),
@@ -4043,6 +4112,16 @@ async function submitTransaction(event) {
 		return;
 	}
 
+	if (payload.recurring && Number(payload.installmentTotal) <= 1) {
+		payload.recurringSeriesId = existingTransaction?.recurringSeriesId || payload.id;
+		payload.recurringDay = fromISO(payload.date).getDate();
+		payload.recurringGenerated = false;
+	} else {
+		payload.recurringSeriesId = "";
+		payload.recurringDay = 0;
+		payload.recurringGenerated = false;
+	}
+
 	if (isNewCard) payload.cardId = registerCard(els.customCardInput.value);
 	registerAccount(accountValue);
 
@@ -4105,6 +4184,8 @@ async function submitTransaction(event) {
 		app.state.transactions.push(...installments);
 		showToast("Lançamento adicionado.");
 	}
+
+	ensureRecurringTransactions();
 
 	try {
 		await saveState({ strict: true });
@@ -5679,6 +5760,13 @@ async function init() {
 	bindAuthEvents();
 	bindEvents();
 	await loadData();
+	if (ensureRecurringTransactions()) {
+		try {
+			await saveState({ strict: true });
+		} catch (error) {
+			console.error("Falha ao salvar recorrências", error);
+		}
+	}
 	app.currentView = app.state.currentView || "overview";
 	app.categoryChartType = app.state.categoryChartType || "expense";
 	resetTransactionForm();
