@@ -1107,14 +1107,26 @@ function sortTransactions(a, b) {
 	return a.description.localeCompare(b.description, "pt-BR");
 }
 
+function isEffectiveTransaction(item) {
+	return item.date <= toISO(new Date());
+}
+
+function balanceImpact(item) {
+	if (item.type === "income") return Number(item.amount);
+	return item.paymentMethod === "credit_card" ? 0 : -Number(item.amount);
+}
+
 function totalsFor(items) {
 	return items.reduce(
 		(acc, item) => {
+			// Future-dated entries remain visible, but only affect financial
+			// balances and credit usage once their date is reached.
+			if (!isEffectiveTransaction(item)) return acc;
 			acc[item.type] += Number(item.amount);
 			if (item.type === "expense" && item.paymentMethod === "credit_card")
 				acc.creditExpense += Number(item.amount);
 			acc.count[item.type] += 1;
-			acc.balance = acc.income - acc.expense + acc.creditExpense;
+			acc.balance += balanceImpact(item);
 			return acc;
 		},
 		{ income: 0, expense: 0, creditExpense: 0, balance: 0, count: { income: 0, expense: 0 } },
@@ -1125,12 +1137,8 @@ function openingBalanceForPeriod(matches = () => true) {
 	if (app.state.period === "all") return 0;
 	const start = toISO(periodRange().start);
 	return app.state.transactions
-		.filter((item) => item.date < start && matches(item))
-		.reduce(
-			(sum, item) =>
-				sum + (item.type === "income" ? Number(item.amount) : item.paymentMethod === "credit_card" ? 0 : -Number(item.amount)),
-			0,
-		);
+		.filter((item) => item.date < start && isEffectiveTransaction(item) && matches(item))
+		.reduce((sum, item) => sum + balanceImpact(item), 0);
 }
 
 function expensesByCategory(items) {
@@ -2248,6 +2256,7 @@ function bankBreakdown(displayTransactions = app.state.transactions) {
 		const creditUsed = periodBankTransactions
 			.filter(
 				(item) =>
+					isEffectiveTransaction(item) &&
 					item.type === "expense" &&
 					item.paymentMethod === "credit_card" &&
 					creditCardIds.has(item.cardId),
@@ -2394,6 +2403,17 @@ function renderCashflowChart(items) {
 		Math.round((range.end - range.start) / 86400000) + 1,
 	);
 	const daily = Array.from({ length: days }, () => 0);
+	const creditDaily = Array.from({ length: days }, () => 0);
+	const openingBalance =
+		app.state.period === "all"
+			? 0
+			: app.state.transactions
+					.filter(
+						(item) =>
+							item.date < toISO(range.start) &&
+							transactionMatchesActiveFilters(item),
+					)
+					.reduce((sum, item) => sum + balanceImpact(item), 0);
 
 	items.forEach((item) => {
 		const index = Math.max(
@@ -2403,14 +2423,20 @@ function renderCashflowChart(items) {
 				Math.round((fromISO(item.date) - range.start) / 86400000),
 			),
 		);
-		daily[index] +=
-			item.type === "income" ? Number(item.amount) : -Number(item.amount);
+		daily[index] += balanceImpact(item);
+		if (item.type === "expense" && item.paymentMethod === "credit_card")
+			creditDaily[index] += Number(item.amount);
 	});
 
 	const cumulative = [];
 	daily.reduce((acc, value, index) => {
 		cumulative[index] = acc + value;
 		return cumulative[index];
+	}, openingBalance);
+	const creditCumulative = [];
+	creditDaily.reduce((acc, value, index) => {
+		creditCumulative[index] = acc + value;
+		return creditCumulative[index];
 	}, 0);
 
 	const crossesMonths =
@@ -2437,9 +2463,9 @@ function renderCashflowChart(items) {
 
 	const data = {
 		labels,
-		datasets: [
+		 datasets: [
 			{
-				label: "Saldo do periodo",
+				label: "Saldo bancário",
 				data: cumulative,
 				borderColor: lineColor,
 				backgroundColor: (context) => {
@@ -2465,6 +2491,20 @@ function renderCashflowChart(items) {
 				tension: 0.35,
 				fill: true,
 			},
+			{
+				label: "Crédito utilizado",
+				data: creditCumulative,
+				borderColor: "#7c3aed",
+				backgroundColor: "transparent",
+				borderWidth: 2,
+				pointRadius: days <= 10 ? 2 : 0,
+				pointHoverRadius: 4,
+				pointBackgroundColor: "#7c3aed",
+				pointBorderColor: getCssVar("--surface-soft"),
+				pointBorderWidth: 1.5,
+				tension: 0.35,
+				fill: false,
+			},
 		],
 	};
 
@@ -2474,11 +2514,11 @@ function renderCashflowChart(items) {
 		layout: { padding: { top: 10, right: 12, bottom: 4, left: 6 } },
 		interaction: { intersect: false, mode: "index" },
 		plugins: {
-			legend: { display: false },
+			legend: { display: true, labels: { color: chartTextColor() } },
 			tooltip: {
 				callbacks: {
 					label: (context) =>
-						`Saldo do periodo: ${brl(context.parsed.y)}`,
+						`${context.dataset.label}: ${brl(context.parsed.y)}`,
 				},
 			},
 		},
