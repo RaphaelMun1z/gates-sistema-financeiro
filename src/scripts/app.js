@@ -9,6 +9,8 @@ const PDF_OCR_MAX_PAGES = 20;
 const PDF_OCR_RENDER_SCALE = 3;
 const PDF_OCR_MAX_DIMENSION = 4096;
 const LEGACY_STORAGE_KEY = "gates_financeiro_state_v1";
+const MONEY_DECIMALS = 4;
+const MONEY_SCALE = 10 ** MONEY_DECIMALS;
 
 const DEFAULT_CATEGORIES = { income: [], expense: [] };
 
@@ -231,6 +233,8 @@ const els = {
 	cardDueDayInput: document.getElementById("cardDueDayInput"),
 	cardSubmitButton: document.getElementById("cardSubmitButton"),
 	cardList: document.getElementById("cardList"),
+	invoiceList: document.getElementById("invoiceList"),
+	metricsGrid: document.getElementById("metricsGrid"),
 	bankForm: document.getElementById("bankForm"),
 	bankNameInput: document.getElementById("bankNameInput"),
 	bankList: document.getElementById("bankList"),
@@ -293,6 +297,7 @@ const app = {
 	currentType: "income",
 	categoryChartType: "expense",
 	editingTransactionId: null,
+	editingInstallmentGroupId: "",
 	editingGoalId: null,
 	editingCategoryId: null,
 	editingCardId: null,
@@ -344,7 +349,18 @@ function addDays(date, amount) {
 }
 
 function addMonths(date, amount) {
-	return new Date(date.getFullYear(), date.getMonth() + amount, 1);
+	const targetYear = date.getFullYear();
+	const targetMonth = date.getMonth() + amount;
+	const requestedDay = date.getDate();
+	const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+	// Keep the day selected by the user. When the target month has fewer days,
+	// clamp to its last valid day (31 Jan -> 28/29 Feb, for example).
+	return new Date(
+		targetYear,
+		targetMonth,
+		Math.min(requestedDay, lastDayOfTargetMonth),
+	);
 }
 
 function weekStart(date) {
@@ -366,15 +382,27 @@ function brl(value) {
 	return new Intl.NumberFormat("pt-BR", {
 		style: "currency",
 		currency: "BRL",
+		minimumFractionDigits: 2,
+		maximumFractionDigits: MONEY_DECIMALS,
 	}).format(Number(value) || 0);
 }
 
+function normalizeMoney(value) {
+	const number = Number(value);
+	if (!Number.isFinite(number)) return NaN;
+	return Math.round((number + Number.EPSILON) * MONEY_SCALE) / MONEY_SCALE;
+}
+
 function parseCurrencyValue(value) {
-	const normalized = String(value || "")
-		.replace(/[^\d,.-]/g, "")
-		.replace(/\./g, "")
-		.replace(",", ".");
-	return Number(normalized);
+	const raw = String(value || "").trim().replace(/[^\d,.-]/g, "");
+	if (!raw) return NaN;
+	const lastComma = raw.lastIndexOf(",");
+	const lastDot = raw.lastIndexOf(".");
+	const decimal = lastComma > lastDot ? "," : lastDot >= 0 ? "." : "";
+	const normalized = decimal
+		? `${raw.slice(0, decimal === "," ? lastComma : lastDot).replace(/[.,]/g, "")}.${raw.slice((decimal === "," ? lastComma : lastDot) + 1)}`
+		: raw.replace(/[.,]/g, "");
+	return normalizeMoney(normalized);
 }
 
 function formatCurrencyInputValue(value) {
@@ -382,7 +410,7 @@ function formatCurrencyInputValue(value) {
 	if (!Number.isFinite(number) || number <= 0) return "";
 	return number.toLocaleString("pt-BR", {
 		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
+		maximumFractionDigits: MONEY_DECIMALS,
 	});
 }
 
@@ -515,6 +543,7 @@ function seedState() {
 		cards: [],
 		budgets: {},
 		goals: [],
+		invoices: [],
 		transactions: [],
 	};
 }
@@ -581,6 +610,8 @@ function normalizeState(raw) {
 			"planning",
 			"goals",
 			"categories",
+			"banks",
+			"invoices",
 		].includes(raw?.currentView)
 			? raw.currentView
 			: "overview",
@@ -601,6 +632,7 @@ function normalizeState(raw) {
 		goals: Array.isArray(raw?.goals)
 			? raw.goals.map(normalizeGoal).filter(Boolean)
 			: fallback.goals,
+		invoices: Array.isArray(raw?.invoices) ? raw.invoices : fallback.invoices,
 		transactions,
 	};
 }
@@ -657,7 +689,7 @@ function normalizeTransaction(
 	const category = validCategoryIds.includes(rawCategory)
 		? rawCategory
 		: rawCategory;
-	const amount = Number(item?.amount);
+	const amount = normalizeMoney(item?.amount);
 	const date = window.GatesDateUtils.isValidISODate(item?.date)
 		? item.date
 		: toISO(new Date());
@@ -695,15 +727,15 @@ function normalizeTransaction(
 
 function normalizeGoal(item) {
 	const name = String(item?.name || "").trim();
-	const target = Number(item?.target);
-	const saved = Number(item?.saved || 0);
+	const target = normalizeMoney(item?.target);
+	const saved = normalizeMoney(item?.saved || 0);
 	const category = ["reserve", "travel", "project"].includes(item?.category)
 		? item.category
 		: "";
 	const contributions = Array.isArray(item?.contributions)
 		? item.contributions
 				.map((entry) => {
-					const amount = Number(entry?.amount);
+				const amount = normalizeMoney(entry?.amount);
 					if (!Number.isFinite(amount) || amount === 0) return null;
 					return {
 						id: String(entry.id || uid("contribution")),
@@ -772,7 +804,7 @@ function normalizeCard(item) {
 		].includes(item?.type)
 			? item.type
 			: "credit",
-		creditLimit: Math.max(0, Number(item.creditLimit || 0)),
+		creditLimit: Math.max(0, normalizeMoney(item.creditLimit || 0) || 0),
 		closingDay: Math.min(31, Math.max(1, Number(item.closingDay || 1))),
 		dueDay: Math.min(31, Math.max(1, Number(item.dueDay || 10))),
 	};
@@ -928,6 +960,7 @@ function bindAuthEvents() {
 function exportPayload() {
 	return {
 		version: 1,
+		moneyPrecision: MONEY_DECIMALS,
 		exportedAt: new Date().toISOString(),
 		selectedDate: app.state.selectedDate,
 		period: app.state.period,
@@ -940,6 +973,7 @@ function exportPayload() {
 		cards: [...(app.state.cards || [])],
 		budgets: app.state.budgets,
 		goals: [...app.state.goals],
+		invoices: [...(app.state.invoices || [])],
 		transactions: [...app.state.transactions].sort(sortTransactions),
 	};
 }
@@ -1077,12 +1111,26 @@ function totalsFor(items) {
 	return items.reduce(
 		(acc, item) => {
 			acc[item.type] += Number(item.amount);
+			if (item.type === "expense" && item.paymentMethod === "credit_card")
+				acc.creditExpense += Number(item.amount);
 			acc.count[item.type] += 1;
-			acc.balance = acc.income - acc.expense;
+			acc.balance = acc.income - acc.expense + acc.creditExpense;
 			return acc;
 		},
-		{ income: 0, expense: 0, balance: 0, count: { income: 0, expense: 0 } },
+		{ income: 0, expense: 0, creditExpense: 0, balance: 0, count: { income: 0, expense: 0 } },
 	);
+}
+
+function openingBalanceForPeriod(matches = () => true) {
+	if (app.state.period === "all") return 0;
+	const start = toISO(periodRange().start);
+	return app.state.transactions
+		.filter((item) => item.date < start && matches(item))
+		.reduce(
+			(sum, item) =>
+				sum + (item.type === "income" ? Number(item.amount) : item.paymentMethod === "credit_card" ? 0 : -Number(item.amount)),
+			0,
+		);
 }
 
 function expensesByCategory(items) {
@@ -1899,7 +1947,8 @@ function renderAll() {
 	fillCardBankInput(els.cardBankInput?.value || "");
 	renderCategoryIconPicker();
 	renderCategoryColorPicker();
-	renderCards();
+		renderCards();
+		renderInvoices();
 	renderBanks();
 	updateTitle();
 	updatePeriodButtons();
@@ -1933,6 +1982,7 @@ function updateTitle() {
 		goals: "Metas financeiras",
 		categories: "Categorias de gastos",
 		banks: "Bancos",
+		invoices: "Faturas",
 	};
 	els.topbarTitle.textContent = viewLabels[app.currentView];
 	els.titleEyebrow.textContent = range.label;
@@ -1951,6 +2001,10 @@ function updatePeriodButtons() {
 
 function updateNavButtons() {
 	document.body.dataset.view = app.currentView;
+	// Keep the shared dashboard area deterministic when navigating without a
+	// full render. It is also useful on the invoices page; only the bank
+	// management page hides this summary through the page-specific layout rule.
+	els.metricsGrid?.classList.toggle("hidden", app.currentView === "banks");
 	document.querySelectorAll(".nav-item").forEach((button) => {
 		button.classList.toggle(
 			"active",
@@ -2141,6 +2195,8 @@ function toggleCategoryColorPopover() {
 function renderMetrics() {
 	const items = visibleTransactions();
 	const totals = totalsFor(items);
+	const openingBalance = openingBalanceForPeriod(matchesAccountFilter);
+	const balance = openingBalance + totals.balance;
 	const goal = primaryGoal();
 	const goalPercent = goal ? goalPercentFor(goal) : 0;
 
@@ -2148,11 +2204,13 @@ function renderMetrics() {
 	els.incomeMeta.textContent = `${totals.count.income} ${totals.count.income === 1 ? "entrada" : "entradas"}`;
 	els.expenseTotal.textContent = brl(totals.expense);
 	els.expenseMeta.textContent = `${totals.count.expense} ${totals.count.expense === 1 ? "saída" : "saídas"}`;
-	els.balanceTotal.textContent = brl(totals.balance);
+	els.balanceTotal.textContent = brl(balance);
 	els.balanceTotal.style.color =
-		totals.balance >= 0 ? "var(--income)" : "var(--expense)";
+		balance >= 0 ? "var(--income)" : "var(--expense)";
 	els.balanceMeta.textContent =
-		totals.balance >= 0 ? "Saldo positivo" : "Saldo negativo";
+		app.state.period === "all"
+			? balance >= 0 ? "Saldo positivo" : "Saldo negativo"
+			: `Inclui ${brl(openingBalance)} de saldo anterior`;
 	renderBalanceBreakdown(items);
 	renderBalanceInvoices(items);
 	els.mainGoalTotal.textContent = goal ? `${goalPercent}%` : "0%";
@@ -2162,13 +2220,16 @@ function renderMetrics() {
 function bankBreakdown(displayTransactions = app.state.transactions) {
 	return uniqueAccounts().map((bank) => {
 		const normalizedBank = bank.toLowerCase();
-		const transactions = displayTransactions.filter(
+		const periodBankTransactions = allPeriodTransactions().filter(
 			(item) =>
 				String(item.account || item.bank || "")
 					.trim()
 					.toLowerCase() === normalizedBank,
 		);
-		const allBankTransactions = app.state.transactions.filter(
+		// The bank summary represents the selected period, not the active
+		// transaction filters (bank, category, search, payment method, etc.).
+		// Otherwise filtering the list would incorrectly change account balances.
+		const transactions = periodBankTransactions.filter(
 			(item) =>
 				String(item.account || item.bank || "")
 					.trim()
@@ -2184,7 +2245,7 @@ function bankBreakdown(displayTransactions = app.state.transactions) {
 			["credit", "credit_debit"].includes(card.type),
 		);
 		const creditCardIds = new Set(creditCards.map((card) => card.id));
-		const creditUsed = allBankTransactions
+		const creditUsed = periodBankTransactions
 			.filter(
 				(item) =>
 					item.type === "expense" &&
@@ -2197,9 +2258,13 @@ function bankBreakdown(displayTransactions = app.state.transactions) {
 			0,
 		);
 		const totals = totalsFor(transactions);
+		const openingBalance = openingBalanceForPeriod(
+			(item) =>
+				String(item.account || item.bank || "").trim().toLowerCase() === normalizedBank,
+		);
 		return {
 			bank,
-			balance: totals.balance,
+			balance: openingBalance + totals.balance,
 			count: transactions.length,
 			creditLimit,
 			creditUsed,
@@ -2280,6 +2345,7 @@ function renderBalanceInvoices(displayTransactions = app.state.transactions) {
 function renderSidebarSummary() {
 	const items = visibleTransactions();
 	const totals = totalsFor(items);
+	const balance = openingBalanceForPeriod(matchesAccountFilter) + totals.balance;
 	const top = Object.entries(expensesByCategory(items)).sort(
 		(a, b) => b[1] - a[1],
 	)[0];
@@ -2287,9 +2353,9 @@ function renderSidebarSummary() {
 		.filter((item) => item.recurring && item.type === "expense")
 		.reduce((sum, item) => sum + Number(item.amount), 0);
 
-	els.sideBalance.textContent = brl(totals.balance);
+	els.sideBalance.textContent = brl(balance);
 	els.sideBalance.style.color =
-		totals.balance >= 0 ? "var(--income)" : "var(--expense)";
+		balance >= 0 ? "var(--income)" : "var(--expense)";
 	els.sideBalanceHint.textContent = `${items.length} ${items.length === 1 ? "lançamento" : "lançamentos"} no filtro`;
 	els.miniInsights.innerHTML = [
 		top
@@ -3580,6 +3646,7 @@ function setCurrentType(type) {
 
 function resetTransactionForm() {
 	app.editingTransactionId = null;
+	app.editingInstallmentGroupId = "";
 	els.transactionForm.reset();
 	els.transactionIdInput.value = "";
 	els.dateInput.value = toISO(new Date());
@@ -3654,7 +3721,7 @@ function submitCard(event) {
 				? els.customCardBankInput.value.trim()
 				: els.cardBankInput.value,
 		type: els.cardTypeInput.value,
-		creditLimit: Number(els.cardLimitInput.value || 0),
+		creditLimit: parseCurrencyValue(els.cardLimitInput.value || 0),
 		closingDay: Number(els.cardClosingDayInput.value || 1),
 		dueDay: Number(els.cardDueDayInput.value || 10),
 	});
@@ -3689,6 +3756,101 @@ function editCard(id) {
 	syncCustomFormControls();
 	els.cardSubmitButton.textContent = "Atualizar cartão";
 	els.cardNameInput.focus();
+}
+
+function invoiceCloseDate(date, closingDay) {
+	const value = fromISO(date);
+	const closing = Math.min(Math.max(1, Number(closingDay || 1)), 31);
+	const month = value.getDate() <= closing ? value.getMonth() : value.getMonth() + 1;
+	return toISO(new Date(value.getFullYear(), month, Math.min(closing, new Date(value.getFullYear(), month + 1, 0).getDate())));
+}
+
+function invoiceDueDate(closingDate, dueDay) {
+	const closing = fromISO(closingDate);
+	const due = Math.min(Math.max(1, Number(dueDay || 10)), 31);
+	const dueMonth = due <= closing.getDate() ? closing.getMonth() + 1 : closing.getMonth();
+	const lastDay = new Date(closing.getFullYear(), dueMonth + 1, 0).getDate();
+	return toISO(new Date(closing.getFullYear(), dueMonth, Math.min(due, lastDay)));
+}
+
+function invoicesForCards() {
+	const saved = new Map((app.state.invoices || []).map((item) => [item.id, item]));
+	const groups = new Map();
+	app.state.transactions.filter((item) => item.paymentMethod === "credit_card" && item.cardId).forEach((item) => {
+		const card = uniqueCards().find((entry) => entry.id === item.cardId);
+		if (!card) return;
+		const periodMonth = item.date.slice(0, 7);
+		const id = `${card.id}:${periodMonth}`;
+		const itemClosingDate = invoiceCloseDate(item.date, card.closingDay);
+		const group = groups.get(id) || {
+			id,
+			card,
+			periodMonth,
+			closingDate: itemClosingDate,
+			dueDate: invoiceDueDate(itemClosingDate, card.dueDay),
+			items: [],
+			total: 0,
+			...saved.get(id),
+		};
+		group.items.push(item);
+		group.total += Number(item.amount);
+		// A monthly invoice can contain purchases before and after the card's
+		// closing day. It becomes payable only after the latest closing date.
+		if (itemClosingDate > group.closingDate) {
+			group.closingDate = itemClosingDate;
+			group.dueDate = invoiceDueDate(itemClosingDate, card.dueDay);
+		}
+		groups.set(id, group);
+	});
+	const range = periodRange();
+	return [...groups.values()]
+		.filter((invoice) =>
+			app.state.period === "all" ||
+			invoice.items.some((item) => isInRange(item.date, range)),
+		)
+		.sort((a, b) => b.periodMonth.localeCompare(a.periodMonth) || b.card.name.localeCompare(a.card.name, "pt-BR"));
+}
+
+function renderInvoices() {
+	if (!els.invoiceList) return;
+	const invoices = invoicesForCards();
+	const today = toISO(new Date());
+	els.invoiceList.innerHTML = invoices.length
+		? invoices.map((invoice) => {
+				const closed = today >= invoice.closingDate;
+				const items = [...invoice.items].sort(sortTransactions);
+				const referenceMonth = formatMonth(fromISO(`${invoice.periodMonth}-01`));
+				return `<article class="invoice-card ${invoice.paidAt ? "invoice-paid" : ""}" data-reference-month="${escapeHTML(referenceMonth)}">
+					<div class="invoice-card-header"><div><span class="eyebrow">Fatura do cartão</span><h3>${escapeHTML(invoice.card.name)}</h3><p>Fechamento: ${escapeHTML(formatFullDate(fromISO(invoice.closingDate)))} · Vencimento: ${escapeHTML(formatFullDate(fromISO(invoice.dueDate)))}</p></div><div class="invoice-total"><small>Total integral</small><strong>${brl(invoice.total)}</strong></div></div>
+					<div class="invoice-items"><div class="invoice-items-heading"><span>Itens da fatura</span><span>${items.length} ${items.length === 1 ? "item" : "itens"}</span></div>${items.map((item) => `<div class="invoice-item"><span><strong>${escapeHTML(item.description)}</strong><small>${escapeHTML(formatFullDate(fromISO(item.date)))}${installmentText(item) ? ` · ${escapeHTML(installmentText(item))}` : ""}</small></span><strong>${brl(item.amount)}</strong></div>`).join("")}</div>
+					<div class="invoice-card-footer">${invoice.paidAt ? `<span class="invoice-status">Pago em ${escapeHTML(formatFullDate(fromISO(invoice.paidAt)))}</span>` : closed ? `<button type="button" class="btn-primary" data-invoice-pay="${escapeHTML(invoice.id)}">Pagar fatura integral · ${brl(invoice.total)}</button>` : `<span class="invoice-status invoice-pending">Disponível para pagamento após ${escapeHTML(formatFullDate(fromISO(invoice.closingDate)))}</span>`}</div>
+				</article>`;
+			}).join("")
+		: '<div class="empty-state">Nenhuma fatura gerada.</div>';
+	els.invoiceList.querySelectorAll(".invoice-card-header p").forEach((dateSummary) => {
+		const [closing, due] = dateSummary.textContent.split("Vencimento:");
+		if (!due) return;
+		dateSummary.innerHTML = `${escapeHTML(closing.trim())}<br><span>Vencimento: ${escapeHTML(due.trim())}</span>`;
+	});
+}
+
+async function payInvoice(id) {
+	const invoice = invoicesForCards().find((item) => item.id === id);
+	if (!invoice || invoice.paidAt) return;
+	if (toISO(new Date()) < invoice.closingDate) {
+		showToast(`Esta fatura só pode ser paga após ${formatFullDate(fromISO(invoice.closingDate))}.`);
+		return;
+	}
+	const previousState = structuredClone(app.state);
+	const account = window.prompt("Informe a conta usada para pagar esta fatura:", uniqueAccounts()[0] || "");
+	if (!account || !uniqueAccounts().some((item) => item.toLowerCase() === account.trim().toLowerCase())) { showToast("Selecione uma conta cadastrada para o pagamento."); return; }
+	const payment = normalizeTransaction({ id: uid("transaction"), type: "expense", description: `Pagamento fatura ${invoice.card.name}`, amount: invoice.total, date: invoice.dueDate, category: "", account, paymentMethod: "credit_card_payment", cardId: invoice.card.id, recurring: false, notes: `Fatura encerrada em ${invoice.closingDate}` });
+	if (!payment) return;
+	app.state.transactions.push(payment);
+	app.state.invoices = [...(app.state.invoices || []).filter((item) => item.id !== id), { id, cardId: invoice.card.id, closingDate: invoice.closingDate, dueDate: invoice.dueDate, paidAt: payment.date, paymentTransactionId: payment.id }];
+	try { await saveState({ strict: true }); }
+	catch { app.state = previousState; showToast("Não foi possível registrar o pagamento da fatura."); return; }
+	renderAll(); showToast("Pagamento da fatura registrado.");
 }
 
 function deleteCard(id) {
@@ -3790,8 +3952,9 @@ function cardTypeLabel(type) {
 	);
 }
 
-function submitTransaction(event) {
+async function submitTransaction(event) {
 	event.preventDefault();
+	const previousState = structuredClone(app.state);
 	const existingTransaction = app.editingTransactionId
 		? app.state.transactions.find(
 				(item) => item.id === app.editingTransactionId,
@@ -3815,11 +3978,8 @@ function submitTransaction(event) {
 		showToast("Selecione ou cadastre o cartão.");
 		return;
 	}
-	const cardId = cardPayment
-		? els.cardInput.value === "__new_card__"
-			? registerCard(els.customCardInput.value)
-			: els.cardInput.value
-		: "";
+	const isNewCard = cardPayment && els.cardInput.value === "__new_card__";
+	const cardId = cardPayment && !isNewCard ? els.cardInput.value : "";
 
 	const payload = normalizeTransaction({
 		id: app.editingTransactionId || uid("transaction"),
@@ -3843,9 +4003,37 @@ function submitTransaction(event) {
 		return;
 	}
 
+	if (isNewCard) payload.cardId = registerCard(els.customCardInput.value);
 	registerAccount(accountValue);
 
-	if (app.editingTransactionId) {
+	if (app.editingInstallmentGroupId) {
+		const total = els.installmentInput.checked
+			? Math.min(120, Math.max(2, Number(els.installmentCountInput.value || 2)))
+			: 1;
+		const units = Math.round(payload.amount * MONEY_SCALE);
+		const baseUnits = Math.floor(units / total);
+		const existingInstallments = app.state.transactions
+			.filter((item) => item.installmentGroupId === app.editingInstallmentGroupId)
+			.sort((a, b) => Number(a.installmentNumber) - Number(b.installmentNumber));
+		const installments = Array.from({ length: total }, (_, index) =>
+			normalizeTransaction({
+				...payload,
+				id: existingInstallments[index]?.id || uid("transaction"),
+				amount: (index === total - 1 ? units - baseUnits * (total - 1) : baseUnits) / MONEY_SCALE,
+				date: toISO(addMonths(fromISO(payload.date), index)),
+				installmentGroupId: total > 1 ? app.editingInstallmentGroupId : "",
+				installmentNumber: index + 1,
+				installmentTotal: total,
+			}),
+		).filter(Boolean);
+		app.state.transactions = [
+			...app.state.transactions.filter(
+				(item) => item.installmentGroupId !== app.editingInstallmentGroupId,
+			),
+			...installments,
+		];
+		showToast("Compra parcelada atualizada.");
+	} else if (app.editingTransactionId) {
 		app.state.transactions = app.state.transactions.map((item) =>
 			item.id === payload.id ? payload : item,
 		);
@@ -3858,16 +4046,16 @@ function submitTransaction(event) {
 				)
 			: 1;
 		const groupId = total > 1 ? uid("installment") : "";
-		const cents = Math.round(payload.amount * 100);
-		const baseCents = Math.floor(cents / total);
+		const units = Math.round(payload.amount * MONEY_SCALE);
+		const baseUnits = Math.floor(units / total);
 		const installments = Array.from({ length: total }, (_, index) =>
 			normalizeTransaction({
 				...payload,
 				id: total > 1 ? uid("transaction") : payload.id,
 				amount:
 					(index === total - 1
-						? cents - baseCents * (total - 1)
-						: baseCents) / 100,
+						? units - baseUnits * (total - 1)
+						: baseUnits) / MONEY_SCALE,
 				date: toISO(addMonths(fromISO(payload.date), index)),
 				installmentGroupId: groupId,
 				installmentNumber: index + 1,
@@ -3878,8 +4066,13 @@ function submitTransaction(event) {
 		showToast("Lançamento adicionado.");
 	}
 
-	app.state.selectedDate = payload.date;
-	saveState();
+	try {
+		await saveState({ strict: true });
+	} catch {
+		app.state = previousState;
+		showToast("Não foi possível salvar o lançamento. Seus dados foram preservados.");
+		return;
+	}
 	resetTransactionForm();
 	renderAll();
 	closeTransactionDrawer();
@@ -3888,21 +4081,36 @@ function submitTransaction(event) {
 function editTransaction(id) {
 	const item = app.state.transactions.find((entry) => entry.id === id);
 	if (!item) return;
+	const installmentGroup = item.installmentGroupId
+		? app.state.transactions
+				.filter((entry) => entry.installmentGroupId === item.installmentGroupId)
+				.sort((a, b) => Number(a.installmentNumber) - Number(b.installmentNumber))
+		: [];
+	const isInstallmentGroup = installmentGroup.length > 1;
 
 	app.editingTransactionId = id;
+	app.editingInstallmentGroupId = isInstallmentGroup
+		? item.installmentGroupId
+		: "";
 	setCurrentType(item.type);
 	els.transactionIdInput.value = item.id;
 	els.descriptionInput.value = item.description;
-	els.amountInput.value = formatCurrencyInputValue(item.amount);
-	els.dateInput.value = item.date;
+	els.amountInput.value = formatCurrencyInputValue(
+		isInstallmentGroup
+			? installmentGroup.reduce((sum, entry) => sum + Number(entry.amount), 0)
+			: item.amount,
+	);
+	els.dateInput.value = isInstallmentGroup ? installmentGroup[0].date : item.date;
 	els.categoryInput.value = item.category;
 	fillAccountInput(item.account || "");
 	els.paymentMethodInput.value = item.paymentMethod || "other";
 	fillCardInput(item.cardId || "");
 	els.notesInput.value = item.notes || "";
 	els.recurringInput.checked = item.recurring;
-	els.installmentInput.checked = Number(item.installmentTotal) > 1;
-	els.installmentCountInput.value = item.installmentTotal || 2;
+	els.installmentInput.checked = isInstallmentGroup || Number(item.installmentTotal) > 1;
+	els.installmentCountInput.value = isInstallmentGroup
+		? installmentGroup.length
+		: item.installmentTotal || 2;
 	updateInstallmentState();
 	els.formTitle.textContent = "Editar movimentação";
 	els.submitButton.textContent = "Salvar";
@@ -3934,7 +4142,7 @@ function confirmDeleteTransaction(id) {
 
 function submitBudget(event) {
 	event.preventDefault();
-	app.state.budgets[els.budgetCategoryInput.value] = Number(
+	app.state.budgets[els.budgetCategoryInput.value] = parseCurrencyValue(
 		els.budgetAmountInput.value,
 	);
 	els.budgetAmountInput.value = "";
@@ -4030,7 +4238,7 @@ function closeGoalHistory() {
 }
 
 function addGoalContribution(id, amount) {
-	const value = Number(amount);
+	const value = normalizeMoney(amount);
 	const goal = app.state.goals.find((item) => item.id === id);
 	if (!goal || !Number.isFinite(value) || value <= 0) {
 		showToast("Informe um valor válido para o aporte.");
@@ -5029,6 +5237,10 @@ function bindEvents() {
 			editCard(button.dataset.cardId);
 		if (button.dataset.cardAction === "delete")
 			deleteCard(button.dataset.cardId);
+	});
+	els.invoiceList?.addEventListener("click", (event) => {
+		const button = event.target.closest("[data-invoice-pay]");
+		if (button) payInvoice(button.dataset.invoicePay);
 	});
 
 	document.querySelectorAll(".segment").forEach((button) => {

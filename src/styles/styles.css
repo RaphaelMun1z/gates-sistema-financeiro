@@ -1264,10 +1264,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .finance-workspace {
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	padding: 1.5rem 1.5rem;
+}
+
+.finance-workspace > #metricsGrid {
+	order: -1;
 }
 
 .right-panel {
@@ -4702,7 +4708,7 @@ body.dark-mode .cashflow-summary span {
 		padding: 1rem 1rem;
 	}
 
-	body:not([data-view="overview"]) .metrics-grid {
+	body:not([data-view="overview"]):not([data-view="invoices"]) .metrics-grid {
 		display: none;
 	}
 
@@ -5235,4 +5241,45 @@ body.dark-mode #goalsView .goal-item:hover {
 		padding-top: 0;
 		border-top: 0;
 	}
+}
+.invoice-card {
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	background: var(--surface);
+	padding: 20px;
+	box-shadow: var(--shadow-sm);
+}
+
+.invoice-card + .invoice-card { margin-top: 16px; }
+.invoice-card-header, .invoice-card-footer, .invoice-items-heading, .invoice-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.invoice-card-header { align-items: flex-start; }
+.invoice-card-header h3 { margin: 4px 0; }
+.invoice-card-header p, .invoice-item small { display: block; color: var(--muted); margin: 0; }
+.invoice-card-header p span { display: block; margin-top: 2px; }
+.invoice-total { text-align: right; padding: 12px 16px; border-radius: 14px; background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
+.invoice-total small { display: block; color: var(--muted); }
+.invoice-total strong { display: block; color: var(--primary); font-size: 1.45rem; margin-top: 3px; }
+.invoice-items { margin: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.invoice-items-heading { padding: 12px 0; color: var(--muted); font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.invoice-item { padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.invoice-item:first-of-type { border-top: 0; }
+.invoice-item > strong { white-space: nowrap; }
+.invoice-status { color: var(--income); font-weight: 700; }
+.invoice-pending { color: var(--muted); font-weight: 500; }
+.invoice-paid { border-color: color-mix(in srgb, var(--income) 45%, var(--line)); }
+
+/* Compact invoice hierarchy: reference month, dates, items, then total. */
+.invoice-card { display: flex; flex-direction: column; }
+.invoice-card::before { content: "Mês de referência: " attr(data-reference-month); order: 1; color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: capitalize; }
+.invoice-card-header { display: contents; }
+.invoice-card-header > div:first-child { order: 2; margin-top: 3px; }
+.invoice-card-header > .invoice-total { order: 4; }
+.invoice-items { order: 3; width: 100%; }
+.invoice-card-footer { order: 5; }
+.invoice-total { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; text-align: left; padding: 11px 14px; }
+.invoice-total strong { margin-top: 0; }
+@media (max-width: 640px) {
+	.invoice-card-header { flex-direction: column; }
+	.invoice-total { width: 100%; text-align: left; }
+	.invoice-card-footer .btn-primary { width: 100%; }
 }

@@ -342,6 +342,10 @@
 							></span>
 							Bancos
 						</button>
+						<button class="nav-item" type="button" data-view="invoices">
+							<span class="nav-icon" aria-hidden="true"><i data-lucide="receipt"></i></span>
+							Faturas
+						</button>
 					</div>
 				</nav>
 
@@ -830,8 +834,16 @@
 							</div>
 						</section>
 
+						<section class="view-panel" id="invoicesView" aria-label="Faturas de cartão">
+							<article class="panel">
+								<div class="panel-heading"><div><span class="eyebrow">Cartões de crédito</span><h2>Faturas</h2></div></div>
+								<div class="card-list" id="invoiceList"></div>
+							</article>
+						</section>
+
 						<section
 							class="metrics-grid"
+							id="metricsGrid"
 							aria-label="Indicadores financeiros"
 						>
 							<article class="metric-card accent-income">
